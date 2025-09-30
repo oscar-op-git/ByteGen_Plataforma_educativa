@@ -7,7 +7,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
   },
-  "keywords": [], 
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -16,6 +16,7 @@
     "morgan": "^1.10.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "typescript": "^5.9.2"
   }
 }
