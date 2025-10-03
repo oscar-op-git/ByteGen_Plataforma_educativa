@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,11 +19,11 @@ export default function LoginForm() {
       return;
     }
 
-    // Simulación de login sin backend
+   
     if (email === "test@demo.com" && password === "123456") {
-      alert("Inicio de sesión exitoso 🚀 (simulado)");
+      alert("Inicio de sesión exitoso ");
     } else {
-      setError("Credenciales incorrectas (simulado)");
+      setError("Credenciales incorrectas ");
     }
   };
 
