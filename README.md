@@ -20,3 +20,6 @@ npm run dev
 
 cd ../frontend
 npm run dev
+
+Dependencias de frontend
+npm install lucide-react
