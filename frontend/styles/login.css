@@ -17,10 +17,7 @@
   text-align: center;
 }
 
-.title {
-  margin-bottom: 20px;
-  color: #1e293b;
-}
+
 
 
 .login-form {
@@ -77,4 +74,37 @@ button:hover {
 .error {
   color: red;
   font-size: 14px;
+}
+
+/* Nombre del proyecto */
+.project-name {
+  font-size: 36px;
+  font-weight: 700;
+  color: #2563eb;
+  margin-bottom: 10px;
+}
+
+/* Subtítulo */
+.title {
+  margin: 20px;
+  color: #1e293b;
+}
+
+/* Links extra */
+.extra-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 10px 0;
+}
+
+.extra-links a {
+  color: #2563eb;
+  font-size: 14px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.extra-links a:hover {
+  color: #1d4ed8;
 }
