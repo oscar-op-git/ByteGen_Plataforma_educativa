@@ -1,0 +1,48 @@
+.lesson-navigation {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+  }
+  
+  .nav-button {
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+  }
+  
+  .nav-button-prev {
+    background-color: #e5e7eb;
+    color: #374151;
+  }
+  
+  .nav-button-prev:hover:not(:disabled) {
+    background-color: #d1d5db;
+  }
+  
+  .nav-button-next {
+    background-color: #4f46e5;
+    color: white;
+  }
+  
+  .nav-button-next:hover:not(:disabled) {
+    background-color: #4338ca;
+  }
+  
+  .nav-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .lesson-counter {
+    color: #4b5563;
+    font-size: 0.875rem;
+  }
