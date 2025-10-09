@@ -1,31 +1,29 @@
-import { useState } from "react";
-
+import { useState } from 'react'
 
 export default function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!email || !password) {
-      setError("Todos los campos son obligatorios");
-      return;
+      setError('Todos los campos son obligatorios')
+      return
     }
 
     if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
-      return;
+      setError('La contraseña debe tener al menos 6 caracteres')
+      return
     }
 
-   
-    if (email === "test@demo.com" && password === "123456") {
-      alert("Inicio de sesión exitoso ");
+    if (email === 'test@demo.com' && password === '123456') {
+      alert('Inicio de sesión exitoso ')
     } else {
-      setError("Credenciales incorrectas ");
+      setError('Credenciales incorrectas ')
     }
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit} className="login-form">
@@ -53,5 +51,5 @@ export default function LoginForm() {
 
       <button type="submit">Entrar</button>
     </form>
-  );
+  )
 }
