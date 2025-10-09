@@ -16,7 +16,7 @@ export default defineConfig([
       tseslint.configs.recommended,
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
-      prettier, 
+      prettier,
     ],
     plugins: {
       prettier: prettierPlugin, // Agregamos Prettier como plugin
