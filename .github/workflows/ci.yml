@@ -1,0 +1,51 @@
+name: CI/CD - ByteGen    # Nombre que verás en la pestaña Actions en GitHub
+
+on:                         # Cuándo se ejecuta este workflow
+  push:
+    branches: [dev, main, jorge-github-acciones]
+  pull_request:
+    branches: [dev, main]
+
+jobs:                       # Define trabajos (puedes tener varios)
+  build:                    # Nombre del job
+    runs-on: ubuntu-latest  # Entorno que usará GitHub para ejecutar las tareas
+
+    strategy:
+      matrix:
+        node-version: [20.x] # Versión de Node a usar
+
+    steps:                   # Lista de pasos (como comandos)
+      - name: Checkout repository
+        uses: actions/checkout@v4  # Clona tu repositorio dentro del entorno de ejecución
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'       # Usa caché para que las instalaciones sean más rápidas
+
+      # BACKEND
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci || npm install
+
+      #- name: Lint backend
+       # working-directory: ./backend
+        #run: npm run lint || echo "Lint skipped"
+
+      #- name: Test backend
+       # working-directory: ./backend
+        #run: npm test || echo "Tests skipped"
+
+      # FRONTEND
+      - name: Install frontend dependencies
+        working-directory: ./frontend  #Ejecuta el comando estando en la carpeta backend
+        run: npm ci || npm install
+
+      #- name: Lint frontend
+       # working-directory: ./frontend  #Ejecuta el comando estando en la carpeta frontend
+        #run: npm run lint || echo "Lint skipped"
+
+      #- name: Test frontend
+       # working-directory: ./frontend
+        #run: npm test || echo "Tests skipped"
