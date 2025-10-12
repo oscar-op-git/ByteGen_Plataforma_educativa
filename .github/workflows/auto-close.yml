@@ -1,0 +1,20 @@
+name: Fail PR auto close 10 minutes
+
+on:
+  workflow_run:
+    workflows: ["CI/CD - ByteGen"]
+    types:
+      - completed
+
+jobs:
+  close-pr:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait 10 minutes
+        run: sleep 600
+
+      - name: Close Pull Request
+        uses: peter-evans/close-pull@v3
+        with:
+          comment: "❌ El PR fue cerrado automáticamente porque no se soluciono en los 10 minutos."
