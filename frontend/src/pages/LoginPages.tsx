@@ -1,5 +1,5 @@
-import "../styles/login.css";
-import LoginForm from "../components/LoginForm";
+import '../styles/login.css'
+import LoginForm from '../components/LoginForm'
 
 export default function LoginPage() {
   return (
@@ -9,5 +9,5 @@ export default function LoginPage() {
         <LoginForm />
       </div>
     </div>
-  );
+  )
 }
