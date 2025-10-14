@@ -1,12 +1,10 @@
-
 .login-page {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #f3f4f6; 
+  background: #f3f4f6;
 }
-
 
 .login-box {
   background: #ffffff;
@@ -16,7 +14,6 @@
   width: 400px;
   text-align: center;
 }
-
 
 
 
@@ -50,10 +47,9 @@ input {
 
 input:focus {
   outline: none;
-  border-color: #2563eb; 
+  border-color: #2563eb;
   box-shadow: 0px 0px 4px rgba(37, 99, 235, 0.5);
 }
-
 
 button {
   padding: 12px;
@@ -69,7 +65,6 @@ button {
 button:hover {
   background: #1d4ed8;
 }
-
 
 .error {
   color: red;

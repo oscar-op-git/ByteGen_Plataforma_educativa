@@ -8,7 +8,7 @@ function App() {
         <Route path="/" element={<LoginPages />} />
       </Routes>
     </Router>
-  );
+  )
 }
 
-export default App;
+export default App
