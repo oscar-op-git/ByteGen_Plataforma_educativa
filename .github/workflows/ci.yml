@@ -29,23 +29,23 @@ jobs:                       # Define trabajos (puedes tener varios)
         working-directory: ./backend
         run: npm ci || npm install
 
-      #- name: Lint backend
-       # working-directory: ./backend
-        #run: npm run lint || echo "Lint skipped"
+      - name: Lint backend
+        working-directory: ./backend
+        run: npm run lint || echo "Lint skipped"
 
-      #- name: Test backend
-       # working-directory: ./backend
-        #run: npm test || echo "Tests skipped"
+      - name: Test backend
+        working-directory: ./backend
+        run: npm test || echo "Tests skipped"
 
       # FRONTEND
       - name: Install frontend dependencies
         working-directory: ./frontend  #Ejecuta el comando estando en la carpeta backend
         run: npm ci || npm install
 
-      #- name: Lint frontend
-       # working-directory: ./frontend  #Ejecuta el comando estando en la carpeta frontend
-        #run: npm run lint || echo "Lint skipped"
+      - name: Lint frontend
+        working-directory: ./frontend  #Ejecuta el comando estando en la carpeta frontend
+        run: npm run lint || echo "Lint skipped"
 
-      #- name: Test frontend
-       # working-directory: ./frontend
-        #run: npm test || echo "Tests skipped"
+      - name: Test frontend
+        working-directory: ./frontend
+        run: npm test || echo "Tests skipped"
