@@ -1,17 +1,12 @@
 {
-    "extends": "./tsconfig.app.json",
-    "compilerOptions": {
-      "verbatimModuleSyntax": false,
-      "module": "ESNext",
-      "target": "ES2020",
-      "jsx": "react-jsx",            //esta línea es clave
-      "types": ["jest", "node"],     //para que ts-jest reconozca Jest
-      "esModuleInterop": true
-    },
-    "include": [
-      "src/**/*.ts",
-      "src/**/*.tsx",
-      "src/__tests__/**/*.ts",
-      "src/__tests__/**/*.tsx"
-    ]
-  }
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "verbatimModuleSyntax": false,
+    "module": "ESNext",
+    "target": "ES2020",
+    "jsx": "react-jsx", //esta línea es clave
+    "types": ["jest", "node"], //para que ts-jest reconozca Jest
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/__tests__/**/*.ts", "src/__tests__/**/*.tsx"]
+}
