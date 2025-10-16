@@ -18,3 +18,30 @@ backend/
 
 
 
+Prisma
+Si no quieres que Prisma modifique tu DB (porque ya tienes tablas), puedes usar prisma db pull para leer el esquema existente:
+    npx prisma db pull
+    npx prisma generate
+
+Con cada actualización importante en la rama (y siempre que halla error), ejecutar
+    npx prisma generate
+
+
+schema.prisma ---> ahí Prisma sabe qué tablas tienes y cómo se relacionan.
+
+
+MIGRACIONES (se crean migraciones si y sólo si la base de datos está vacía). Los modelos que se encuentran en prisma del entorno actual, se llevan a la BD remota
+        npx prisma migrate dev --name init
+
+
+Si cambias la estructura (schema) de la base
+    Ejemplo:
+    Agregas o borras columnas.
+    Cambias el nombre de una tabla.
+    Creas una relación nueva.
+    Modificas tipos de datos en Supabase.
+
+        vuelve a ejecutar 
+            npx prisma db pull
+            npx prisma generate
+
