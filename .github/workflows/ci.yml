@@ -7,6 +7,12 @@ on:                         # Cuándo se ejecuta este workflow
   pull_request:
     branches: [dev, main]
 
+    paths-ignore:
+      - ".github/**"
+      - "-gitignore"
+      - "README.md"
+      
+
 jobs:                       # Define trabajos (puedes tener varios)
   build:                    # Nombre del job
     runs-on: ubuntu-latest  # Entorno que usará GitHub para ejecutar las tareas
