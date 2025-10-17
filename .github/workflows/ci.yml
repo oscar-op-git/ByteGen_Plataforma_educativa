@@ -23,7 +23,7 @@ jobs:                       # Define trabajos (puedes tener varios)
 
     steps:                   # Lista de pasos (como comandos)
       - name: Checkout repository
-        uses: actions/checkout@v5  # Clona tu repositorio dentro del entorno de ejecución
+        uses: actions/checkout@v4  # Clona tu repositorio dentro del entorno de ejecución
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
