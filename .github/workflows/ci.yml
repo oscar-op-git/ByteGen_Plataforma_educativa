@@ -2,7 +2,7 @@ name: CI/CD - ByteGen    # Nombre que verás en la pestaña Actions en GitHub
 
 on:                         # Cuándo se ejecuta este workflow
   push:
-    branches: [dev, main, jorge-github-acciones]
+    branches: [dev, main]
   pull_request:
     branches: [dev, main]
 
@@ -16,7 +16,7 @@ jobs:                       # Define trabajos (puedes tener varios)
 
     steps:                   # Lista de pasos (como comandos)
       - name: Checkout repository
-        uses: actions/checkout@v4  # Clona tu repositorio dentro del entorno de ejecución
+        uses: actions/checkout@v5  # Clona tu repositorio dentro del entorno de ejecución
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
