@@ -1,9 +1,9 @@
-import React from 'react';
-import { CheckCircle } from 'lucide-react';
-import '../styles/SuccessMessage.css';
+import React from 'react'
+import { CheckCircle } from 'lucide-react'
+import '../styles/SuccessMessage.css'
 
 interface SuccessMessageProps {
-  onReset: () => void;
+  onReset: () => void
 }
 
 export const SuccessMessage: React.FC<SuccessMessageProps> = ({ onReset }) => {
@@ -20,5 +20,5 @@ export const SuccessMessage: React.FC<SuccessMessageProps> = ({ onReset }) => {
         Crear otra cuenta
       </button>
     </div>
-  );
-};
+  )
+}

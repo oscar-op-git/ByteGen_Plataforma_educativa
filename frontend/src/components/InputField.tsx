@@ -1,19 +1,19 @@
-import React from 'react';
-import { AlertCircle } from 'lucide-react';
-import '../styles/InputField.css';
+import React from 'react'
+import { AlertCircle } from 'lucide-react'
+import '../styles/InputField.css'
 
 interface InputFieldProps {
-  label: string;
-  name: string;
-  type: string;
-  value: string;
-  error?: string;
-  icon: React.ReactNode;
-  placeholder: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  showToggle?: boolean;
-  toggleIcon?: React.ReactNode;
-  onToggleShow?: () => void;
+  label: string
+  name: string
+  type: string
+  value: string
+  error?: string
+  icon: React.ReactNode
+  placeholder: string
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  showToggle?: boolean
+  toggleIcon?: React.ReactNode
+  onToggleShow?: () => void
 }
 
 export const InputField: React.FC<InputFieldProps> = ({
@@ -27,7 +27,7 @@ export const InputField: React.FC<InputFieldProps> = ({
   onChange,
   showToggle,
   toggleIcon,
-  onToggleShow
+  onToggleShow,
 }) => {
   return (
     <div className="input-field">
@@ -35,9 +35,7 @@ export const InputField: React.FC<InputFieldProps> = ({
         {label}
       </label>
       <div className="input-field__wrapper">
-        <div className="input-field__icon">
-          {icon}
-        </div>
+        <div className="input-field__icon">{icon}</div>
         <input
           id={name}
           name={name}
@@ -48,11 +46,7 @@ export const InputField: React.FC<InputFieldProps> = ({
           className={`input-field__input ${showToggle ? 'input-field__input--with-toggle' : ''} ${error ? 'input-field__input--error' : ''}`}
         />
         {showToggle && onToggleShow && (
-          <button
-            type="button"
-            onClick={onToggleShow}
-            className="input-field__toggle"
-          >
+          <button type="button" onClick={onToggleShow} className="input-field__toggle">
             {toggleIcon}
           </button>
         )}
@@ -64,5 +58,5 @@ export const InputField: React.FC<InputFieldProps> = ({
         </p>
       )}
     </div>
-  );
-};
+  )
+}

@@ -1,46 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { X, Home, BookOpen, Users, Mail } from 'lucide-react';
-import '../styles/Header.css';
+import React, { useState, useEffect } from 'react'
+import { X, Home, BookOpen, Users, Mail } from 'lucide-react'
+import '../styles/Header.css'
 
 interface HeaderProps {
-  onLoginClick?: () => void;
-  onRegisterClick?: () => void;
+  onLoginClick?: () => void
+  onRegisterClick?: () => void
 }
 
 export const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+      setIsScrolled(window.scrollY > 20)
+    }
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden'
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = ''
     }
 
     return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isMenuOpen]);
+      document.body.style.overflow = ''
+    }
+  }, [isMenuOpen])
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
+  const closeMenu = () => setIsMenuOpen(false)
 
   const navLinks = [
     { label: 'Inicio', href: '#', icon: <Home size={18} /> },
     { label: 'Características', href: '#features', icon: <BookOpen size={18} /> },
     { label: 'Nosotros', href: '#about', icon: <Users size={18} /> },
-    { label: 'Contacto', href: '#contact', icon: <Mail size={18} /> }
-  ];
+    { label: 'Contacto', href: '#contact', icon: <Mail size={18} /> },
+  ]
 
   return (
     <>
@@ -53,16 +53,10 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick })
 
           <nav className="header__nav header__nav--desktop">
             <div className="header__actions">
-              <button
-                onClick={onLoginClick}
-                className="header__button header__button--secondary"
-              >
+              <button onClick={onLoginClick} className="header__button header__button--secondary">
                 Iniciar Sesión
               </button>
-              <button
-                onClick={onRegisterClick}
-                className="header__button header__button--primary"
-              >
+              <button onClick={onRegisterClick} className="header__button header__button--primary">
                 Registrarse
               </button>
             </div>
@@ -88,23 +82,14 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick })
       <aside className={`header__mobile-menu ${isMenuOpen ? 'header__mobile-menu--open' : ''}`}>
         <div className="header__mobile-header">
           <span className="header__mobile-title">Menú</span>
-          <button
-            className="header__close-button"
-            onClick={closeMenu}
-            aria-label="Cerrar menú"
-          >
+          <button className="header__close-button" onClick={closeMenu} aria-label="Cerrar menú">
             <X size={24} />
           </button>
         </div>
 
         <nav className="header__mobile-nav">
           {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="header__nav-link"
-              onClick={closeMenu}
-            >
+            <a key={link.label} href={link.href} className="header__nav-link" onClick={closeMenu}>
               {link.icon}
               {link.label}
             </a>
@@ -114,8 +99,8 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick })
         <div className="header__mobile-actions">
           <button
             onClick={() => {
-              closeMenu();
-              onLoginClick?.();
+              closeMenu()
+              onLoginClick?.()
             }}
             className="header__button header__button--secondary"
           >
@@ -123,8 +108,8 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick })
           </button>
           <button
             onClick={() => {
-              closeMenu();
-              onRegisterClick?.();
+              closeMenu()
+              onRegisterClick?.()
             }}
             className="header__button header__button--primary"
           >
@@ -133,5 +118,5 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick })
         </div>
       </aside>
     </>
-  );
-};
+  )
+}
