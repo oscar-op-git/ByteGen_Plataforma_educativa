@@ -1,10 +1,10 @@
-import React from 'react';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
-import { useRegisterForm } from '../hooks/useRegisterForm';
-import { InputField } from './InputField';
-import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
-import { SuccessMessage } from './SuccessMessage';
-import '../styles/RegisterForm.css';
+import React from 'react'
+import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
+import { useRegisterForm } from '../hooks/useRegisterForm'
+import { InputField } from './InputField'
+import { PasswordStrengthIndicator } from './PasswordStrengthIndicator'
+import { SuccessMessage } from './SuccessMessage'
+import '../styles/RegisterForm.css'
 
 export const RegisterForm: React.FC = () => {
   const {
@@ -18,34 +18,35 @@ export const RegisterForm: React.FC = () => {
     setShowConfirmPassword,
     handleChange,
     validate,
-    resetForm
-  } = useRegisterForm();
+    resetForm,
+  } = useRegisterForm()
 
-  const [success, setSuccess] = React.useState(false);
+  const [success, setSuccess] = React.useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validate()) return;
+    e.preventDefault()
 
-    setIsSubmitting(true);
+    if (!validate()) return
+
+    setIsSubmitting(true)
 
     try {
-      console.error('Error al registrar:conecten el backend kks');
+      console.log('conecten el backend kks')
+      setSuccess(true)
     } catch (error) {
-      console.error('Error al registrar:', error);
+      console.error('Error al registrar:', error)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleReset = () => {
-    setSuccess(false);
-    resetForm();
-  };
+    setSuccess(false)
+    resetForm()
+  }
 
   if (success) {
-    return <SuccessMessage onReset={handleReset} />;
+    return <SuccessMessage onReset={handleReset} />
   }
 
   return (
@@ -109,11 +110,7 @@ export const RegisterForm: React.FC = () => {
           onToggleShow={() => setShowConfirmPassword(!showConfirmPassword)}
         />
 
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="register-form__submit"
-        >
+        <button onClick={handleSubmit} disabled={isSubmitting} className="register-form__submit">
           {isSubmitting ? (
             <>
               <div className="register-form__spinner"></div>
@@ -132,5 +129,5 @@ export const RegisterForm: React.FC = () => {
         </a>
       </div>
     </div>
-  );
-};
+  )
+}
