@@ -1,4 +1,4 @@
-name: CI/CD - ByteGen    # Nombre que verás en la pestaña Actions en GitHub
+name: CI/CD - ByteGen    # Nombre que verás en la pestaña Actions en GitHub, verificar
 
 on:                         # Cuándo se ejecuta este workflow
   push:
