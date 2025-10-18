@@ -53,8 +53,7 @@ export default function LoginForm() {
       <div className="extra-links">
         <a href="#">¿Olvidaste tu contraseña?</a>
       </div>
-      <button type="submit" >Registrarse</button>
-      
+      <button type="submit">Registrarse</button>
     </form>
   )
 }
