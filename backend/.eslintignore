@@ -1,1 +1,17 @@
-prima/
+# Directorios de código generado
+src/generated/
+
+# Dependencias y compilación
+node_modules/
+dist/
+build/
+
+# Archivos de configuración y caché
+.next/
+.nuxt/
+.cache/
+.vscode/
+
+# Logs y otros directorios que cambian
+logs/
+tmp/
