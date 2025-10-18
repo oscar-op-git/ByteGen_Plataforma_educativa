@@ -6,7 +6,7 @@ import prettierPlugin from 'eslint-plugin-prettier'
 import { defineConfig } from 'eslint/config'
 
 export default defineConfig([
-  // 1. OBJETO DEDICADO PARA EXCLUSIONES GLOBALES (¡Va primero!)
+  // 1. OBJETO DEDICADO PARA EXCLUSIONES GLOBALES
   {
     ignores: [
       'dist/**',
