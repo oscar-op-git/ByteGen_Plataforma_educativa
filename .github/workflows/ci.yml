@@ -11,6 +11,7 @@ on:                         # Cuándo se ejecuta este workflow
       - ".github/**"
       - "-gitignore"
       - "README.md"
+      - "backend/src/generated"
       
 
 jobs:                       # Define trabajos (puedes tener varios)
