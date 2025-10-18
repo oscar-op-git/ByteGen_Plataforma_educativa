@@ -3,7 +3,7 @@ run-name: Desplegado a dev o main por @${{ github.actor}}
 
 on:                         # Cuándo se ejecuta este workflow
   push:
-    branches: [dev, main, jorge-github-acciones]
+    branches: [dev, main]
   pull_request:
     branches: [dev, main]
 
