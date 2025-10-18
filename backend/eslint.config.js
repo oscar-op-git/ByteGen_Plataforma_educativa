@@ -8,7 +8,7 @@ import { defineConfig } from 'eslint/config'
 export default defineConfig([
   {
     files: ['**/*.{ts,js}'], // aplica a .ts y .js
-    ignores: ['dist'], // ignora carpeta compilada
+    ignores: ['dist','src/generated/'], // ignora carpeta compilada
     extends: [
       js.configs.recommended, // reglas básicas de JS
       tseslint.configs.recommended, // reglas de TS
