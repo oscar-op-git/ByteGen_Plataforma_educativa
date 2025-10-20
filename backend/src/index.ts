@@ -1,68 +1,78 @@
-import express from 'express'
-import cors from 'cors' //middleware que sirve para que el frontend llame desde otro origen al backend
+import express from "express";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import { Auth } from "@auth/core";
 import { authConfig } from "./auth.config.js";
 
-const app = express()
+const app = express();
 
-// Middlewares globales
-app.use(cors()) // permite requests desde tu frontend (Vite). Por ahora acepta cualquier origen por defecto
-app.use(express.json()) // parsea body JSON. Pone peticiones en lo pone en req.body
-
-//Aqui van para la autenticación
-app.use(cookieParser());
+// ====== CONFIG ======
 app.set("trust proxy", 1);
 
+// CORS: ajusta tu origen del frontend
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
+app.use(
+  cors({
+    origin: FRONTEND_ORIGIN,
+    credentials: true, // necesario para cookies de sesión
+  })
+);
 
+app.use(express.json());
+app.use(cookieParser());
 
+// ====== RUTAS DE PRUEBA ======
+app.get("/", (_req, res) => {
+  res.send("API funcionando");
+});
 
-//-----------------------------
-//AQUI ES DONDE IRÁN LA RUTAS
-app.get('/', (_req, res) => {
-  //ruta ejemplo
-  res.send('API funcionando')
-})
-app.get('/api/courses', (_req, res) => {
-  //ruta ejemplo
+app.get("/api/courses", (_req, res) => {
   res.json([
-    { id: 1, title: 'React Básico' },
-    { id: 2, title: 'Node.js Avanzado' },
-  ])
-})
+    { id: 1, title: "React Básico" },
+    { id: 2, title: "Node.js Avanzado" },
+  ]);
+});
 
-// Endpoint universal de Auth.js
-app.all("/api/auth/*", async (req, res) => {
-  const url = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+// ====== AUTH.JS (Express 5: usar app.use con prefijo) ======
+app.use("/api/auth", async (req, res) => {
+  // Usa AUTH_URL para construir la URL base (recomendado con proxies)
+  const baseUrl =
+    process.env.AUTH_URL || `http://localhost:${process.env.PORT ?? 4000}`;
+  const url = new URL(req.originalUrl, baseUrl);
 
-  // Normaliza headers a Headers
+  // Normaliza headers a Web Headers
   const headers = new Headers();
   for (const [k, v] of Object.entries(req.headers)) {
     if (Array.isArray(v)) headers.set(k, v.join(","));
     else if (typeof v === "string") headers.set(k, v);
   }
 
-  // Construye el body en función del método y content-type
+  // Construcción de body compatible (Auth.js espera Web Request)
   const hasBody = req.method !== "GET" && req.method !== "HEAD";
   let body: BodyInit | null = null;
 
   if (hasBody) {
     const ct = (req.headers["content-type"] || "").toLowerCase();
-
     if (ct.includes("application/x-www-form-urlencoded")) {
-      // req.body es objeto -> conviértelo a form-encoded
-      const params = new URLSearchParams(req.body as Record<string, string>);
+      const params = new URLSearchParams(
+        (req.body as Record<string, string>) ?? {}
+      );
       body = params.toString();
       if (!headers.get("content-type")) {
-        headers.set("content-type", "application/x-www-form-urlencoded; charset=utf-8");
+        headers.set(
+          "content-type",
+          "application/x-www-form-urlencoded; charset=utf-8"
+        );
       }
     } else if (ct.includes("application/json")) {
-      body = typeof req.body === "string" ? req.body : JSON.stringify(req.body ?? {});
+      body =
+        typeof req.body === "string"
+          ? (req.body as BodyInit)
+          : JSON.stringify(req.body ?? {});
       if (!headers.get("content-type")) {
         headers.set("content-type", "application/json; charset=utf-8");
       }
     } else {
-      // Otros tipos: si no hay string, déjalo en null
       body = typeof req.body === "string" ? (req.body as BodyInit) : null;
     }
   }
@@ -70,26 +80,23 @@ app.all("/api/auth/*", async (req, res) => {
   const request = new Request(url, {
     method: req.method,
     headers,
-    body,               // ✅ nunca undefined, siempre BodyInit | null
+    body, // BodyInit | null (nunca undefined)
     redirect: "manual",
   });
 
   const response = await Auth(request, authConfig);
 
+  // Propaga headers y status
   response.headers.forEach((value, key) => {
     res.setHeader(key, value);
   });
 
-  res.status(response.status).send(await response.text());
+  const text = await response.text();
+  res.status(response.status).send(text);
 });
 
-
-//-------------------------------
-
-// Puerto desde .env o por defecto
-const PORT = process.env.PORT || 4000
-
-// Levanta servidor
+// ====== SERVER ======
+const PORT = Number(process.env.PORT) || 4000;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
-})
+  console.log(`Server running on http://localhost:${PORT}`);
+});
