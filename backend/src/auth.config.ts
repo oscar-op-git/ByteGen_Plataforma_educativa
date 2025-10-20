@@ -8,19 +8,13 @@ import { z } from "zod";
 
 const prisma = new PrismaClient();
 
-// Helper para variables obligatorias
 function requiredEnv(name: string): string {
   const v = process.env[name];
-  if (!v) {
-    throw new Error(`[Auth] Falta la variable de entorno ${name}`);
-  }
+  if (!v) throw new Error(`[Auth] Falta la variable de entorno ${name}`);
   return v;
 }
 
-//Aseguramos string, nunca undefined
-const AUTH_SECRET: string = requiredEnv("AUTH_SECRET");
-
-//Google necesita estas 2 variables
+const AUTH_SECRET = requiredEnv("AUTH_SECRET");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
@@ -29,7 +23,6 @@ const CredentialsSchema = z.object({
   password: z.string().min(6),
 });
 
-// Tipamos providers de forma segura para TS
 const providers: AuthConfig["providers"] = [
   Credentials({
     name: "Credentials",
@@ -39,22 +32,28 @@ const providers: AuthConfig["providers"] = [
       if (!parsed.success) return null;
 
       const { email, password } = parsed.data;
+
+      // Prisma Client: modelo User (camelCase -> prisma.user)
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user?.passwordHash) return null;
 
       const ok = await bcrypt.compare(password, user.passwordHash);
       if (!ok) return null;
 
-      return { id: user.id, name: user.name ?? null, email: user.email ?? null };
+      return {
+        id: user.id, // <-- STRING (nuevo PK)
+        name: user.name ?? null,
+        email: user.email ?? null,
+        // image: user.image ?? null, // opcional
+      };
     },
   }),
-  // Agrega Google sólo si hay credenciales (evita errores en dev)
   ...(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
     ? [
         Google({
           clientId: GOOGLE_CLIENT_ID,
           clientSecret: GOOGLE_CLIENT_SECRET,
-          allowDangerousEmailAccountLinking: true,
+          allowDangerousEmailAccountLinking: false,
         }),
       ]
     : []),
@@ -62,13 +61,18 @@ const providers: AuthConfig["providers"] = [
 
 export const authConfig: AuthConfig = {
   adapter: PrismaAdapter(prisma),
-  secret: AUTH_SECRET,       //ya no es string | undefined
+  secret: AUTH_SECRET,
   trustHost: true,
-  session: { strategy: "jwt" }, // o "database" si usas la tabla Session
+  session: { strategy: "jwt" }, // puedes pasar a "database" si quieres usar auth_session
   providers,
   callbacks: {
+    async jwt({ token, user }) {
+      //"" Cuando hay logfdsffsdfsfsfin, gguarda el id del ususario en el JWT""
+      if (user?.id) token.sub = user.id;
+      return token;
+    },
     async session({ session, token, user }) {
-      // Si usas JWT, el ID vendrá en token.sub; si usas DB, viene en user
+      // Si usas JWT: token.sub; si usas DB: user.id
       const id = user?.id ?? (token?.sub ?? null);
       if (session.user && id) (session.user as any).id = id;
       return session;
