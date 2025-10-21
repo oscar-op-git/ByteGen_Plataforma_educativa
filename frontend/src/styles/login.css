@@ -116,10 +116,18 @@ button:hover {
   width: 18px;
   height: 18px;
 }
-.google-icon svg path:nth-child(1){ fill: #4285F4; }
-.google-icon svg path:nth-child(2){ fill: #34A853; }
-.google-icon svg path:nth-child(3){ fill: #FBBC05; }
-.google-icon svg path:nth-child(4){ fill: #EA4335; }
+.google-icon svg path:nth-child(1) {
+  fill: #4285f4;
+}
+.google-icon svg path:nth-child(2) {
+  fill: #34a853;
+}
+.google-icon svg path:nth-child(3) {
+  fill: #fbbc05;
+}
+.google-icon svg path:nth-child(4) {
+  fill: #ea4335;
+}
 
 /* Enlaces estilo <a> subrayado minimalista */
 .links {
@@ -139,4 +147,6 @@ button:hover {
   cursor: pointer;
   font: inherit;
 }
-.link-underline:hover { opacity: 0.8; }
+.link-underline:hover {
+  opacity: 0.8;
+}
