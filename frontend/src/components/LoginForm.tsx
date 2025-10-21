@@ -83,6 +83,8 @@ export default function LoginForm() {
           borderRadius: '6px',
           padding: '0.5rem 1rem',
           cursor: 'pointer',
+          color: '#333',            
+          fontWeight: 500,
         }}
       >
         <img
@@ -90,8 +92,9 @@ export default function LoginForm() {
           alt="Google"
           style={{ width: 20, height: 20 }}
         />
-        Registrarse con Google
+        <span>Registrarse con Google</span> 
       </button>
+
     </form>
   )
 }
