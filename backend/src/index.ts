@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { Auth } from "@auth/core";
 import { authConfig } from "./auth.config.js";
+//import { Request, type RequestInit as UndiciRequestInit } from "undici";
 
 const app = express();
 
@@ -33,66 +34,41 @@ app.get("/api/courses", (_req, res) => {
   ]);
 });
 
-// ====== AUTH.JS (Express 5: usar app.use con prefijo) ======
 app.use("/api/auth", async (req, res) => {
-  // Usa AUTH_URL para construir la URL base (recomendado con proxies)
-  const baseUrl =
-    process.env.AUTH_URL || `http://localhost:${process.env.PORT ?? 4000}`;
-  const url = new URL(req.originalUrl, baseUrl);
+  const url = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
 
-  // Normaliza headers a Web Headers
   const headers = new Headers();
   for (const [k, v] of Object.entries(req.headers)) {
     if (Array.isArray(v)) headers.set(k, v.join(","));
     else if (typeof v === "string") headers.set(k, v);
   }
 
-  // Construcción de body compatible (Auth.js espera Web Request)
   const hasBody = req.method !== "GET" && req.method !== "HEAD";
-  let body: BodyInit | null = null;
+  let body: string | undefined = undefined;
 
   if (hasBody) {
     const ct = (req.headers["content-type"] || "").toLowerCase();
     if (ct.includes("application/x-www-form-urlencoded")) {
-      const params = new URLSearchParams(
-        (req.body as Record<string, string>) ?? {}
-      );
-      body = params.toString();
-      if (!headers.get("content-type")) {
-        headers.set(
-          "content-type",
-          "application/x-www-form-urlencoded; charset=utf-8"
-        );
-      }
+      body = new URLSearchParams((req.body as Record<string, string>) ?? {}).toString();
+      if (!headers.get("content-type")) headers.set("content-type", "application/x-www-form-urlencoded; charset=utf-8");
     } else if (ct.includes("application/json")) {
-      body =
-        typeof req.body === "string"
-          ? (req.body as BodyInit)
-          : JSON.stringify(req.body ?? {});
-      if (!headers.get("content-type")) {
-        headers.set("content-type", "application/json; charset=utf-8");
-      }
-    } else {
-      body = typeof req.body === "string" ? (req.body as BodyInit) : null;
+      body = typeof req.body === "string" ? req.body : JSON.stringify(req.body ?? {});
+      if (!headers.get("content-type")) headers.set("content-type", "application/json; charset=utf-8");
     }
   }
 
-  const request = new Request(url, {
+  const init: RequestInit = {
     method: req.method,
     headers,
-    body, // BodyInit | null (nunca undefined)
     redirect: "manual",
-  });
+    ...(body !== undefined ? { body } : {}),
+  };
 
+  const request = new Request(url, init);
   const response = await Auth(request, authConfig);
 
-  // Propaga headers y status
-  response.headers.forEach((value, key) => {
-    res.setHeader(key, value);
-  });
-
-  const text = await response.text();
-  res.status(response.status).send(text);
+  response.headers.forEach((value, key) => res.setHeader(key, value));
+  res.status(response.status).send(await response.text());
 });
 
 // ====== SERVER ======

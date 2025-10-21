@@ -5,7 +5,7 @@ import { authConfig } from "../auth.config.js";
 export const authRouter = Router();
 
 authRouter.use(async (req, res) => {
-  const baseUrl = process.env.AUTH_URL || `http://localhost:${process.env.PORT ?? 4000}`;
+  const baseUrl = process.env.AUTH_URL || `http://localhost:${process.env.PORT ?? 3000}`;
   const url = new URL(req.originalUrl, baseUrl);
 
   // Construye Headers de forma segura (sin undefined)
@@ -41,7 +41,7 @@ authRouter.use(async (req, res) => {
   const request = new Request(url, {
     method: req.method,
     headers,
-    body,                     // ✅ BodyInit | null
+    body,                     //BodyInit | null
     redirect: "manual",       // satisface el tipo RequestRedirect
   });
 

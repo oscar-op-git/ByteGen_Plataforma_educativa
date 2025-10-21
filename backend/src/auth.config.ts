@@ -60,6 +60,7 @@ const providers: AuthConfig["providers"] = [
 ];
 
 export const authConfig: AuthConfig = {
+  basePath: "/api/auth",
   adapter: PrismaAdapter(prisma),
   secret: AUTH_SECRET,
   trustHost: true,
