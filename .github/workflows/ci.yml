@@ -1,10 +1,18 @@
 name: CI/CD - ByteGen    # Nombre que verás en la pestaña Actions en GitHub
+run-name: Desplegado a dev o main por @${{ github.actor}}
 
 on:                         # Cuándo se ejecuta este workflow
   push:
-    branches: [dev, main, jorge-github-acciones]
+    branches: [dev, main]
   pull_request:
     branches: [dev, main]
+
+    paths-ignore:
+      - ".github/**"
+      - "-gitignore"
+      - "README.md"
+      - "backend/src/generated"
+      
 
 jobs:                       # Define trabajos (puedes tener varios)
   build:                    # Nombre del job
@@ -29,23 +37,23 @@ jobs:                       # Define trabajos (puedes tener varios)
         working-directory: ./backend
         run: npm ci || npm install
 
-      #- name: Lint backend
-       # working-directory: ./backend
-        #run: npm run lint || echo "Lint skipped"
+      - name: Lint backend
+        working-directory: ./backend
+        run: npm run lint || echo "Lint skipped"
 
-      #- name: Test backend
-       # working-directory: ./backend
-        #run: npm test || echo "Tests skipped"
+      - name: Test backend
+        working-directory: ./backend
+        run: npm test || echo "Tests skipped"
 
       # FRONTEND
       - name: Install frontend dependencies
         working-directory: ./frontend  #Ejecuta el comando estando en la carpeta backend
         run: npm ci || npm install
 
-      #- name: Lint frontend
-       # working-directory: ./frontend  #Ejecuta el comando estando en la carpeta frontend
-        #run: npm run lint || echo "Lint skipped"
+      - name: Lint frontend
+        working-directory: ./frontend  #Ejecuta el comando estando en la carpeta frontend
+        run: npm run lint || echo "Lint skipped"
 
-      #- name: Test frontend
-       # working-directory: ./frontend
-        #run: npm test || echo "Tests skipped"
+      - name: Test frontend
+        working-directory: ./frontend
+        run: npm test || echo "Tests skipped"
