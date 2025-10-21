@@ -1,4 +1,4 @@
-import { useState, useMemo  } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export default function LoginForm() {
@@ -20,14 +20,13 @@ export default function LoginForm() {
       setError('La contraseña debe tener al menos 6 caracteres')
       return
     }
-
+    setLoading(true)
     if (email === 'test@demo.com' && password === '123456') {
       alert('Inicio de sesión exitoso ')
     } else {
       setError('Credenciales incorrectas ')
     }
   }
-  
 
   const emailValid = useMemo(() => {
     if (!email) return false
@@ -65,7 +64,7 @@ export default function LoginForm() {
           placeholder="Ingresa tu contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required  
+          required
         />
       </div>
 
@@ -93,10 +92,12 @@ export default function LoginForm() {
         <span>Iniciar sesión con correo electrónico</span>
       </button>
 
-      <a href="/recuperar" onClick={()=>navigate('/recuperar')}>¿Olvidaste tu contraseña?</a>
+      <a href="/recuperar" onClick={() => navigate('/recuperar')}>
+        ¿Olvidaste tu contraseña?
+      </a>
       <button type="button" className="link" onClick={() => navigate('/registro')}>
-          Regístrate
-        </button>
+        Regístrate
+      </button>
     </form>
   )
 }
