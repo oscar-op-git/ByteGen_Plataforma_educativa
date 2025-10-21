@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { signIn, signOut, useSession, SessionProvider } from 'next-auth/react'  //Auth.js para manejar OAuth (lo de google)
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -25,6 +26,20 @@ export default function LoginForm() {
     }
   }
 
+   //Aqui va el flujo de Google con Auth.js
+  const handleGoogleSignIn = async () => {
+    try {
+      // Redirige al flujo OAuth de Google
+      await signIn('google', {
+        callbackUrl: window.location.origin, // redirige al home al finalizar
+      })
+    } catch (err) {
+      console.error(err)
+      setError('Error al conectar con Google')
+    }
+  }
+
+
   return (
     <form onSubmit={handleSubmit} className="login-form">
       {error && <p className="error">{error}</p>}
@@ -50,6 +65,33 @@ export default function LoginForm() {
       </div>
 
       <button type="submit">Entrar</button>
+      {/*un separador común y corriente */}
+      <div style={{ textAlign: 'center', margin: '1rem 0', color: '#666' }}>
+        — o —
+      </div>
+    {/*Botón de registro/inicio con Google */}
+      <button
+        type="button"
+        onClick={handleGoogleSignIn}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          backgroundColor: 'white',
+          border: '1px solid #ccc',
+          borderRadius: '6px',
+          padding: '0.5rem 1rem',
+          cursor: 'pointer',
+        }}
+      >
+        <img
+          src="https://www.svgrepo.com/show/475656/google-color.svg"
+          alt="Google"
+          style={{ width: 20, height: 20 }}
+        />
+        Registrarse con Google
+      </button>
     </form>
   )
 }
