@@ -101,3 +101,42 @@ button:hover {
 .extra-links a:hover {
   color: #1d4ed8;
 }
+
+/* Botón con icono */
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.google-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+.google-icon svg path:nth-child(1){ fill: #4285F4; }
+.google-icon svg path:nth-child(2){ fill: #34A853; }
+.google-icon svg path:nth-child(3){ fill: #FBBC05; }
+.google-icon svg path:nth-child(4){ fill: #EA4335; }
+
+/* Enlaces estilo <a> subrayado minimalista */
+.links {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.link-underline {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #111;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font: inherit;
+}
+.link-underline:hover { opacity: 0.8; }

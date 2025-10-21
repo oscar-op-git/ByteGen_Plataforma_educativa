@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model community {
+  id_group_group Int
+  id_user_user   Int
+  group          group @relation(fields: [id_group_group], references: [id_group], onDelete: Cascade, map: "group_fk")
+  user           user  @relation(fields: [id_user_user], references: [id_user], onDelete: Cascade, map: "user_fk")
+
+  @@id([id_group_group, id_user_user], map: "community_pk")
+}
+
+model curso {
+  id_course   Int       @id(map: "curso_pk") @default(autoincrement())
+  titulo      String?   @db.VarChar
+  description String?   @db.VarChar
+  fecha_ini   DateTime? @db.Date
+  fecha_fin   DateTime? @db.Date
+  group       group[]
+  modulo      modulo[]
+}
+
+model evaluacion {
+  id_evaluacion    Int        @id(map: "evaluacion_pk") @default(autoincrement())
+  titulo           String?    @db.VarChar
+  description      String?    @db.VarChar
+  id_topico_topico Int?
+  topico           topico?    @relation(fields: [id_topico_topico], references: [id_topico], map: "topico_fk")
+  pregunta         pregunta[]
+}
+
+model group {
+  id_group         Int         @id(map: "group_pk") @default(autoincrement())
+  description      Int?        @db.SmallInt
+  id_course_course Int
+  community        community[]
+  curso            curso       @relation(fields: [id_course_course], references: [id_course], map: "curso_fk")
+  orden            orden[]
+}
+
+model modulo {
+  id_modulo        Int     @id(map: "modulo_pk") @default(autoincrement())
+  titulo           String? @db.VarChar
+  description      String? @db.VarChar
+  id_course_course Int?
+  id_topico_topico Int?
+  curso            curso?  @relation(fields: [id_course_course], references: [id_course], map: "curso_fk")
+  topico           topico? @relation(fields: [id_topico_topico], references: [id_topico], map: "topico_fk")
+}
+
+model multimedia {
+  id_multimedia     Int                 @id(map: "multimedia_pk") @default(autoincrement())
+  url_view          String?             @db.VarChar
+  url_original      String?             @db.VarChar
+  multimedia_topico multimedia_topico[]
+}
+
+model multimedia_topico {
+  id_multimedia_multimedia   Int
+  id_tipo_topico_tipo_topico Int
+  id_topico_topico           Int
+  multimedia                 multimedia  @relation(fields: [id_multimedia_multimedia], references: [id_multimedia], onDelete: Cascade, map: "multimedia_fk")
+  tipo_topico                tipo_topico @relation(fields: [id_tipo_topico_tipo_topico], references: [id_tipo_topico], onDelete: Cascade, map: "tipo_topico_fk")
+  topico                     topico      @relation(fields: [id_topico_topico], references: [id_topico], map: "topico_fk")
+
+  @@id([id_multimedia_multimedia, id_tipo_topico_tipo_topico], map: "multimedia_topico_pk")
+}
+
+model orden {
+  id_orden         Int     @id(map: "orden_pk") @default(autoincrement())
+  puesto           Int?    @db.SmallInt
+  id_group_group   Int?
+  id_topico_topico Int?
+  group            group?  @relation(fields: [id_group_group], references: [id_group], map: "group_fk")
+  topico           topico? @relation(fields: [id_topico_topico], references: [id_topico], map: "topico_fk")
+}
+
+model pregunta {
+  id_pregunta                    Int            @id(map: "pregunta_pk") @default(autoincrement())
+  contenido                      String?        @db.VarChar
+  id_tipo_pregunta_tipo_pregunta Int?
+  id_evaluacion_evaluacion       Int?
+  evaluacion                     evaluacion?    @relation(fields: [id_evaluacion_evaluacion], references: [id_evaluacion], map: "evaluacion_fk")
+  tipo_pregunta                  tipo_pregunta? @relation(fields: [id_tipo_pregunta_tipo_pregunta], references: [id_tipo_pregunta], map: "tipo_pregunta_fk")
+  respuesta                      respuesta[]
+}
+
+model respuesta {
+  id_respuesta         Int       @id(map: "respuesta_pk") @default(autoincrement()) @db.SmallInt
+  contenido            String?   @db.VarChar
+  id_user_user         Int?
+  id_pregunta_pregunta Int?
+  pregunta             pregunta? @relation(fields: [id_pregunta_pregunta], references: [id_pregunta], map: "pregunta_fk")
+  user                 user?     @relation(fields: [id_user_user], references: [id_user], map: "user_fk")
+}
+
+model role {
+  id_role     Int     @id(map: "role_pk") @default(autoincrement())
+  description String? @db.VarChar
+  user        user[]
+}
+
+model tipo_pregunta {
+  id_tipo_pregunta Int        @id(map: "tipo_pregunta_pk") @default(autoincrement())
+  description      String?    @db.VarChar
+  pregunta         pregunta[]
+}
+
+model tipo_topico {
+  id_tipo_topico    Int                 @id(map: "tipo_topico_pk") @default(autoincrement())
+  description       String?             @db.VarChar
+  multimedia_topico multimedia_topico[]
+}
+
+model topico {
+  id_topico         Int                 @id(map: "topico_pk") @default(autoincrement())
+  titulo            String?             @db.VarChar
+  description       String?             @db.VarChar
+  evaluacion        evaluacion[]
+  modulo            modulo[]
+  multimedia_topico multimedia_topico[]
+  orden             orden[]
+}
+
+model user {
+  id_user      Int         @id(map: "user_pk") @default(autoincrement())
+  first_name   String?     @db.VarChar
+  last_name    String?     @db.VarChar
+  password     String?     @db.VarChar
+  email        String?     @db.VarChar
+  id_role_role Int?
+  verified     Boolean?    @default(false)
+  community    community[]
+  respuesta    respuesta[]
+  role         role?       @relation(fields: [id_role_role], references: [id_role], map: "role_fk")
+}
