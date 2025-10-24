@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom'
 
 export default function LoginForm() {
@@ -57,7 +57,7 @@ export default function LoginForm() {
     } catch (err: any) {
       setError(err?.message ?? 'Error de inicio de sesión')
     } finally {
-      setLoading(false) // 👈 APAGAR loading SIEMPRE
+      setLoading(false) //  APAGAR loading SIEMPRE
     }
     if (password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres')
@@ -122,19 +122,7 @@ export default function LoginForm() {
     form.submit()
   }
 
-  const emailValid = useMemo(() => {
-    if (!email) return false
-    // Valida formato + longitud mínima
-    const basicEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return basicEmail.test(email) && email.length >= 20
-  }, [email])
-
-  const passwordValid = useMemo(() => {
-    if (!password) return false
-    return password.length >= 20
-  }, [password])
-
-  const formValid = emailValid && passwordValid
+ 
 
   return (
     <form onSubmit={handleSubmit} className="login-form">
