@@ -63,7 +63,7 @@ export default function LoginForm() {
     }
     setLoading(true)
     if (email === 'test@demo.com' && password === '123456') {
-      alert('Inicio de sesión exitoso ')
+      navigate('/home')
     } else {
       setError('Credenciales incorrectas ')
     }
@@ -192,7 +192,7 @@ export default function LoginForm() {
         <span>Iniciar sesión con correo electrónico</span>
       </button>
 
-      <a href="/recuperar" onClick={() => navigate('/recuperar')}>
+      <a href="" onClick={() => navigate('/recover')}>
         ¿Olvidaste tu contraseña?
       </a>
       <button type="button" className="link" onClick={() => navigate('/registro')}>

@@ -5,6 +5,7 @@ import { InputField } from './InputField'
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator'
 import { SuccessMessage } from './SuccessMessage'
 import '../styles/RegisterForm.css'
+import { useNavigate } from 'react-router-dom'
 
 export const RegisterForm: React.FC = () => {
   const {
@@ -21,6 +22,7 @@ export const RegisterForm: React.FC = () => {
     resetForm,
   } = useRegisterForm()
 
+  const navigate = useNavigate();
   const [success, setSuccess] = React.useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +45,10 @@ export const RegisterForm: React.FC = () => {
   const handleReset = () => {
     setSuccess(false)
     resetForm()
+  }
+
+  const handleLogin = () =>{
+    navigate('/login')
   }
 
   if (success) {
@@ -124,7 +130,7 @@ export const RegisterForm: React.FC = () => {
 
       <div className="register-form__footer">
         ¿Ya tienes cuenta?{' '}
-        <a href="#" className="register-form__link">
+        <a href="#" onClick={handleLogin} className="register-form__link">
           Inicia sesión
         </a>
       </div>
