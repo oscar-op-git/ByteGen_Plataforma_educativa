@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo} from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from 'react-router-dom'
 
 export default function LoginForm() {
@@ -12,20 +12,20 @@ export default function LoginForm() {
 
 
   type session = {
-  user?: {
-    name?: string | null
-    email?: string | null
-    image?: string | null
+    user?: {
+      name?: string | null
+      email?: string | null
+      image?: string | null
+    } | null
+    // ...otros campos que devuelva Auth.js
   } | null
-  // ...otros campos que devuelva Auth.js
-  } | null
-  
+
   //cargar sesión al montar
   useEffect(() => {
     fetch(`${BACKEND_URL}/auth/session`, { credentials: "include" })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => setSession(data))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   //Este bloque es poco confiable, usarlo como guía y luego borrar
@@ -35,7 +35,7 @@ export default function LoginForm() {
 
     if (!email || !password) return setError("Todos los campos son obligatorios");
     if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres");
-
+    setLoading(true)
     try {
       // Auth.js credentials exige x-www-form-urlencoded
       const body = new URLSearchParams({ email, password }).toString();
@@ -55,49 +55,51 @@ export default function LoginForm() {
       await new Promise((r) => setTimeout(r, 50));
       window.location.href = "/"; // o donde quieras
     } catch (err: any) {
-      setError(err?.message ?? "Error de inicio de sesión");
+      setError(err?.message ?? 'Error de inicio de sesión')
+    } finally {
+      setLoading(false) // 👈 APAGAR loading SIEMPRE
     }
     if (password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres')
       return
     }
-    setLoading(true)
+
     if (email === 'test@demo.com' && password === '123456') {
       navigate('/home')
     } else {
       setError('Credenciales incorrectas ')
     }
   }
-  
+
   async function handleGoogleSignIn() {
-      try {
-        //Obtener CSRF token del backend
-        const res = await fetch(`${BACKEND_URL}/auth/csrf`, { credentials: "include" });
-        if (!res.ok) throw new Error("No se pudo obtener CSRF token");
-        const { csrfToken } = await res.json();
+    try {
+      //Obtener CSRF token del backend
+      const res = await fetch(`${BACKEND_URL}/auth/csrf`, { credentials: "include" });
+      if (!res.ok) throw new Error("No se pudo obtener CSRF token");
+      const { csrfToken } = await res.json();
 
-        //Determinar la URL a donde volverás después del login
-        const callbackUrl = new URL("/", window.location.origin).toString(); 
-        // → Ejemplo: http://localhost:5173/
+      //Determinar la URL a donde volverás después del login
+      const callbackUrl = new URL("/", window.location.origin).toString();
+      // → Ejemplo: http://localhost:5173/
 
-        //Crear y enviar un formulario POST (para navegación top-level segura)
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = `${BACKEND_URL}/auth/signin/google`; // apunta al provider correcto
-        form.style.display = "none";
+      //Crear y enviar un formulario POST (para navegación top-level segura)
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `${BACKEND_URL}/auth/signin/google`; // apunta al provider correcto
+      form.style.display = "none";
 
-        // Campos requeridos
-        form.append(
-          Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
-          Object.assign(document.createElement("input"), { name: "callbackUrl", value: callbackUrl })
-        );
+      // Campos requeridos
+      form.append(
+        Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
+        Object.assign(document.createElement("input"), { name: "callbackUrl", value: callbackUrl })
+      );
 
-        document.body.appendChild(form);
-        form.submit();
-      } catch (error) {
-        console.error("Error durante el inicio de sesión con Google:", error);
-        alert("Hubo un problema al iniciar sesión. Intenta de nuevo.");
-      }
+      document.body.appendChild(form);
+      form.submit();
+    } catch (error) {
+      console.error("Error durante el inicio de sesión con Google:", error);
+      alert("Hubo un problema al iniciar sesión. Intenta de nuevo.");
+    }
   }
 
   async function handleSignOut() {
@@ -204,7 +206,7 @@ export default function LoginForm() {
       <button type="button" className="link" onClick={() => navigate('/registro')}>
         Regístrate
       </button>
-      
+
     </form>
   );
 }
