@@ -15,66 +15,60 @@ function requiredEnv(name: string): string {
 }
 
 const AUTH_SECRET = requiredEnv("AUTH_SECRET");
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+// Forzamos Google presentes para evitar estados a medias
+const GOOGLE_CLIENT_ID = requiredEnv("GOOGLE_CLIENT_ID");
+const GOOGLE_CLIENT_SECRET = requiredEnv("GOOGLE_CLIENT_SECRET");
 
 const CredentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
-const providers: AuthConfig["providers"] = [
-  Credentials({
-    name: "Credentials",
-    credentials: { email: {}, password: {} },
-    async authorize(raw) {
-      const parsed = CredentialsSchema.safeParse(raw);
-      if (!parsed.success) return null;
-
-      const { email, password } = parsed.data;
-
-      // Prisma Client: modelo User (camelCase -> prisma.user)
-      const user = await prisma.user.findUnique({ where: { email } });
-      if (!user?.passwordHash) return null;
-
-      const ok = await bcrypt.compare(password, user.passwordHash);
-      if (!ok) return null;
-
-      return {
-        id: user.id, // <-- STRING (nuevo PK)
-        name: user.name ?? null,
-        email: user.email ?? null,
-        // image: user.image ?? null, // opcional
-      };
-    },
-  }),
-  ...(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
-    ? [
-        Google({
-          clientId: GOOGLE_CLIENT_ID,
-          clientSecret: GOOGLE_CLIENT_SECRET,
-          allowDangerousEmailAccountLinking: false,
-        }),
-      ]
-    : []),
-];
-
 export const authConfig: AuthConfig = {
+  // Con router montado en /api/auth esto ayuda al parser interno
   basePath: "/api/auth",
-  adapter: PrismaAdapter(prisma),
-  secret: AUTH_SECRET,
   trustHost: true,
-  session: { strategy: "jwt" }, // puedes pasar a "database" si quieres usar auth_session
-  providers,
+  secret: AUTH_SECRET,
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
+
+  providers: [
+    Credentials({
+      name: "Credentials",
+      credentials: { email: {}, password: {} },
+      async authorize(raw) {
+        const parsed = CredentialsSchema.safeParse(raw);
+        if (!parsed.success) return null;
+
+        const { email, password } = parsed.data;
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user?.passwordHash) return null;
+
+        const ok = await bcrypt.compare(password, user.passwordHash);
+        if (!ok) return null;
+
+        return {
+          id: user.id,                 // STRING (PK nuevo)
+          name: user.name ?? null,
+          email: user.email ?? null,
+          // image: user.image ?? null,
+        };
+      },
+    }),
+    Google({
+      clientId: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: false,
+    }),
+  ],
+
   callbacks: {
     async jwt({ token, user }) {
-      //"" Cuando hay logfdsffsdfsfsfin, gguarda el id del ususario en el JWT""
-      if (user?.id) token.sub = user.id;
+      if (user?.id) token.sub = user.id; // asegura sub = id
       return token;
     },
     async session({ session, token, user }) {
-      // Si usas JWT: token.sub; si usas DB: user.id
-      const id = user?.id ?? (token?.sub ?? null);
+      const id = user?.id ?? token?.sub ?? null;
       if (session.user && id) (session.user as any).id = id;
       return session;
     },
