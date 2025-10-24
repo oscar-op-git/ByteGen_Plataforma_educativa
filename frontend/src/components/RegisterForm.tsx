@@ -130,7 +130,7 @@ export const RegisterForm: React.FC = () => {
 
       <div className="register-form__footer">
         ¿Ya tienes cuenta?{' '}
-        <a href="#" onClick={handleLogin} className="register-form__link">
+        <a href="" onClick={handleLogin} className="register-form__link">
           Inicia sesión
         </a>
       </div>
