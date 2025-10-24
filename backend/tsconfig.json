@@ -4,11 +4,12 @@
     // File Layout
     "rootDir": "./src",
     "outDir": "./dist",
-
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "nodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
-    "target": "es6",
     "types": ["jest", "node"],
     // For nodejs:
     // "lib": ["esnext"],
