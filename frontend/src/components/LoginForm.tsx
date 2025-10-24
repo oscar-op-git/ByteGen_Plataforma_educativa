@@ -1,49 +1,138 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom'
 
 export default function LoginForm() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false)
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [session, setSession] = useState<any>(null);
+  const BACKEND_URL = "http://localhost:3000"
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
 
-    if (!email || !password) {
-      setError('Todos los campos son obligatorios')
-      return
+  type session = {
+    user?: {
+      name?: string | null
+      email?: string | null
+      image?: string | null
+    } | null
+    // ...otros campos que devuelva Auth.js
+  } | null
+
+  //cargar sesión al montar
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/auth/session`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => setSession(data))
+      .catch(() => { });
+  }, []);
+
+  //Este bloque es poco confiable, usarlo como guía y luego borrar
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!email || !password) return setError("Todos los campos son obligatorios");
+    if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres");
+    setLoading(true)
+    try {
+      // Auth.js credentials exige x-www-form-urlencoded
+      const body = new URLSearchParams({ email, password }).toString();
+      const resp = await fetch(`${BACKEND_URL}/auth/callback/credentials`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        credentials: "include", // necesario para cookies
+        body,
+      });
+
+      if (!resp.ok) {
+        const t = await resp.text();
+        throw new Error(t || "Credenciales incorrectas");
+      }
+
+      // Actualiza sesión y/o redirige
+      await new Promise((r) => setTimeout(r, 50));
+      window.location.href = "/"; // o donde quieras
+    } catch (err: any) {
+      setError(err?.message ?? 'Error de inicio de sesión')
+    } finally {
+      setLoading(false) //  APAGAR loading SIEMPRE
     }
-
     if (password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres')
       return
     }
-    setLoading(true)
+
     if (email === 'test@demo.com' && password === '123456') {
-      alert('Inicio de sesión exitoso ')
+      navigate('/home')
     } else {
       setError('Credenciales incorrectas ')
     }
   }
 
-  const emailValid = useMemo(() => {
-    if (!email) return false
-    // Valida formato + longitud mínima
-    const basicEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return basicEmail.test(email) && email.length >= 20
-  }, [email])
+  async function handleGoogleSignIn() {
+    try {
+      //Obtener CSRF token del backend
+      const res = await fetch(`${BACKEND_URL}/auth/csrf`, { credentials: "include" });
+      if (!res.ok) throw new Error("No se pudo obtener CSRF token");
+      const { csrfToken } = await res.json();
 
-  const passwordValid = useMemo(() => {
-    if (!password) return false
-    return password.length >= 20
-  }, [password])
+      //Determinar la URL a donde volverás después del login
+      const callbackUrl = new URL("/", window.location.origin).toString();
+      // → Ejemplo: http://localhost:5173/
 
-  const formValid = emailValid && passwordValid
+      //Crear y enviar un formulario POST (para navegación top-level segura)
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `${BACKEND_URL}/auth/signin/google`; // apunta al provider correcto
+      form.style.display = "none";
+
+      // Campos requeridos
+      form.append(
+        Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
+        Object.assign(document.createElement("input"), { name: "callbackUrl", value: callbackUrl })
+      );
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch (error) {
+      console.error("Error durante el inicio de sesión con Google:", error);
+      alert("Hubo un problema al iniciar sesión. Intenta de nuevo.");
+    }
+  }
+
+  async function handleSignOut() {
+    // 1) Pedir CSRF
+    const r = await fetch(`${BACKEND_URL}/auth/csrf`, { credentials: "include" })
+    const { csrfToken } = await r.json()
+
+    // 2) POST real con form (navegación top-level)
+    const form = document.createElement("form")
+    form.method = "POST"
+    form.action = `${BACKEND_URL}/auth/signout`
+    form.style.display = "none"
+
+    form.append(
+      Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
+      Object.assign(document.createElement("input"), { name: "callbackUrl", value: "http://localhost:5173/" })
+    )
+
+    document.body.appendChild(form)
+    form.submit()
+  }
+
+ 
 
   return (
     <form onSubmit={handleSubmit} className="login-form">
+      {session?.user ? (
+        <div style={{ marginBottom: 12 }}>
+          <p>Hola, {session.user.name || session.user.email}</p>
+          <button type="button" onClick={handleSignOut}>Salir</button>
+        </div>
+      ) : null}
+
       {error && <p className="error">{error}</p>}
 
       <div className="form-group">
@@ -53,6 +142,7 @@ export default function LoginForm() {
           placeholder="Ingresa tu correo"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
           required
         />
       </div>
@@ -64,6 +154,7 @@ export default function LoginForm() {
           placeholder="Ingresa tu contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
           required
         />
       </div>
@@ -75,29 +166,35 @@ export default function LoginForm() {
       {/* Botón con logo de Google para “correo electrónico” */}
       <button
         type="button"
-        onClick={handleSubmit}
-        disabled={loading || !formValid}
-        className="secondary btn-with-icon"
-        title="Iniciar sesión con correo electrónico"
-      >
-        <span className="google-icon" aria-hidden="true">
-          {/* Logo “G” (SVG simple) */}
-          <svg viewBox="0 0 533.5 544.3" width="18" height="18" aria-hidden="true">
-            <path d="M533.5 278.4c0-17.4-1.6-34.1-4.7-50.3H272v95.2h146.9c-6.3 34.1-25.1 62.9-53.6 82.2v68.2h86.7c50.7-46.7 81.5-115.5 81.5-195.3z" />
-            <path d="M272 544.3c72.9 0 134.2-24.1 178.9-65.5l-86.7-68.2c-24.1 16.2-55 25.9-92.2 25.9-70.8 0-130.9-47.8-152.4-112.1H30.8v70.3c44.7 88.6 136.7 149.6 241.2 149.6z" />
-            <path d="M119.6 324.4c-10.1-30.1-10.1-62.7 0-92.8V161.3H30.8c-41.2 81.5-41.2 178 0 259.5l88.8-96.4z" />
-            <path d="M272 107.6c39.5-.6 77.6 14.6 106.4 42.3l79.4-79.4C446.1 24.5 386.6-.5 320.8 0 216.3 0 124.3 60.9 79.6 149.6l90 70.3C141.1 155.7 201.2 107.9 272 107.6z" />
-          </svg>
-        </span>
-        <span>Iniciar sesión con correo electrónico</span>
+        onClick={handleGoogleSignIn}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "0.5rem",
+          backgroundColor: "white",
+          border: "1px solid #ccc",
+          borderRadius: "6px",
+          padding: "0.5rem 1rem",
+          cursor: "pointer",
+          color: "#333",
+          fontWeight: 500,
+        }}>
+        <img
+          src="https://www.svgrepo.com/show/475656/google-color.svg"
+          alt="Google"
+          style={{ width: 20, height: 20 }}
+        />
+        <span>Registrarse con Google</span>
       </button>
 
-      <a href="/recuperar" onClick={() => navigate('/recuperar')}>
+      <a href="" onClick={() => navigate('/recover')}>
         ¿Olvidaste tu contraseña?
       </a>
       <button type="button" className="link" onClick={() => navigate('/registro')}>
         Regístrate
       </button>
+
     </form>
-  )
+  );
 }

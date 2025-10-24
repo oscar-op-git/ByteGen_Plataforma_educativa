@@ -2,10 +2,12 @@ import React from 'react'
 import { Header } from '../components/Header'
 import { RegisterForm } from '../components/RegisterForm'
 import '../styles/RegisterPage.css'
+import { useNavigate } from 'react-router-dom'
 
 export const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
   const handleLoginClick = () => {
-    console.log('Ir a login')
+    navigate('/login')
     // Aquí puedes navegar a la página de login
   }
 

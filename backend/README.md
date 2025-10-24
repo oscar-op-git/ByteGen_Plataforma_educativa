@@ -39,3 +39,10 @@ Modificas tipos de datos en Supabase.
         vuelve a ejecutar
             npx prisma db pull
             npx prisma generate
+
+
+
+https://authjs.dev/getting-started/authentication/oauth?framework=Express
+https://authjs.dev/reference/express
+https://authjs.dev/reference/core/types#authaction
+en el frontend: fetch(url, { credentials: "include" }) si llamas APIs que lean la sesión.
