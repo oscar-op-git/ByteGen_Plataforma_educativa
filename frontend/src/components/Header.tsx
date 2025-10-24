@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick })
     <>
       <header className={`header ${isScrolled ? 'header--scrolled' : ''}`}>
         <div className="header__container">
-          <a href="#" className="header__logo">
+          <a href="/login" className="header__logo">
             <div className="header__logo-icon">A</div>
             <span className="header__logo-text">AppName</span>
           </a>

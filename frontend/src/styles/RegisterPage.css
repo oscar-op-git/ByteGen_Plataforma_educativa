@@ -9,6 +9,7 @@
   padding: 1.5rem;
   position: relative;
   overflow: hidden;
+  margin-top: 75px;
 }
 
 @keyframes gradientShift {
