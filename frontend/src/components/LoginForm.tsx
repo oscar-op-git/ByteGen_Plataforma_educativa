@@ -37,7 +37,7 @@ export default function LoginForm() {
     try {
       // Auth.js credentials exige x-www-form-urlencoded
       const body = new URLSearchParams({ email, password }).toString();
-      const resp = await fetch(`${API_URL}/api/auth/callback/credentials`, {
+      const resp = await fetch(`${BACKEND_URL}/auth/callback/credentials`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         credentials: "include", // necesario para cookies
@@ -72,7 +72,7 @@ export default function LoginForm() {
       //Crear y enviar un formulario POST (para navegación top-level segura)
       const form = document.createElement("form");
       form.method = "POST";
-      form.action = `${BACKEND_URL}/auth/signin/google`; // apunta al provider 
+      form.action = `${BACKEND_URL}/auth/signin/google`; // apunta al provider correcto
       form.style.display = "none";
 
       // Campos requeridos
@@ -91,31 +91,25 @@ export default function LoginForm() {
 
 
   
-  const handleSignOut = async () => {
-    try {
-      //Pedir el CSRF token al backend
-      const res = await fetch(`${BACKEND_URL}/auth/csrf`, {
-        credentials: "include",
-      });
-      const { csrfToken } = await res.json();
+  async function handleSignOut() {
+    // 1) Pedir CSRF
+    const r = await fetch(`${BACKEND_URL}/auth/csrf`, { credentials: "include" })
+    const { csrfToken } = await r.json()
 
-      //Enviar el POST al endpoint con el token
-      await fetch(`${BACKEND_URL}/auth/signout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        credentials: "include",
-        body: new URLSearchParams({
-          csrfToken,
-          callbackUrl: "http://localhost:5173/", // hacia tu frontend
-        }),
-      });
+    // 2) POST real con form (navegación top-level)
+    const form = document.createElement("form")
+    form.method = "POST"
+    form.action = `${BACKEND_URL}/auth/signout`
+    form.style.display = "none"
 
-      //Opcional: redirigir o limpiar sesión local
-      window.location.href = "http://localhost:5173/";
-    } catch (err) {
-      console.error("Error al cerrar sesión:", err);
-    }
-  };
+    form.append(
+      Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
+      Object.assign(document.createElement("input"), { name: "callbackUrl", value: "http://localhost:5173/" })
+    )
+
+    document.body.appendChild(form)
+    form.submit()
+  }
 
   return (
     <form onSubmit={handleSubmit} className="login-form">
