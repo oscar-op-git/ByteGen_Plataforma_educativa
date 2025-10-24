@@ -15,6 +15,14 @@ authRouter.use(
       }),
     ],
     secret: env.AUTH_SECRET,
+    callbacks: {
+      async redirect({ url, baseUrl }) {
+        // Permite redirecciones al front
+        if (url.startsWith("http://localhost:5173")) return url;
+        if (url.startsWith("/")) return `${baseUrl}${url}`;
+        return baseUrl; // fallback
+      },
+    },
     // ajustar cookies/redirects aquí (por frontend en otro dominio)
   })
 )

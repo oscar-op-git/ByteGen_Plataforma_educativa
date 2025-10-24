@@ -6,15 +6,27 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [session, setSession] = useState<any>(null);
-  const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+  const BACKEND_URL = "http://localhost:3000"
+
+
+  type session = {
+  user?: {
+    name?: string | null
+    email?: string | null
+    image?: string | null
+  } | null
+  // ...otros campos que devuelva Auth.js
+  } | null
+  
   //cargar sesión al montar
   useEffect(() => {
-    fetch(`${API_URL}/api/auth/session`, { credentials: "include" })
+    fetch(`${BACKEND_URL}/auth/session`, { credentials: "include" })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => setSession(data))
       .catch(() => {});
   }, []);
 
+  //Este bloque es poco confiable, usarlo como guía y luego borrar
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -45,39 +57,64 @@ export default function LoginForm() {
     }
   };
 
+  
   async function handleGoogleSignIn() {
-    // 1) Pide CSRF
-    const r = await fetch(`${API_URL}/api/auth/csrf`, { credentials: "include" });
-    const { csrfToken } = await r.json();
+    try {
+      //Obtener CSRF token del backend
+      const res = await fetch(`${BACKEND_URL}/auth/csrf`, { credentials: "include" });
+      if (!res.ok) throw new Error("No se pudo obtener CSRF token");
+      const { csrfToken } = await res.json();
 
-    // 2) Crea y envía un form POST real (navegación top-level)
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = `${API_URL}/api/auth/signin/google`; // importante: /signin/google (segmento)
-    form.style.display = "none";
+      //Determinar la URL a donde volverás después del login
+      const callbackUrl = new URL("/", window.location.origin).toString(); 
+      // → Ejemplo: http://localhost:5173/
 
-    const csrf = document.createElement("input");
-    csrf.name = "csrfToken";
-    csrf.value = csrfToken;
-    form.appendChild(csrf);
+      //Crear y enviar un formulario POST (para navegación top-level segura)
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `${BACKEND_URL}/auth/signin/google`; // apunta al provider 
+      form.style.display = "none";
 
-    const cb = document.createElement("input");
-    cb.name = "callbackUrl";
-    cb.value = window.location.origin; // o la ruta que prefieras
-    form.appendChild(cb);
+      // Campos requeridos
+      form.append(
+        Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
+        Object.assign(document.createElement("input"), { name: "callbackUrl", value: callbackUrl })
+      );
 
-    document.body.appendChild(form);
-    form.submit();
+      document.body.appendChild(form);
+      form.submit();
+    } catch (error) {
+      console.error("Error durante el inicio de sesión con Google:", error);
+      alert("Hubo un problema al iniciar sesión. Intenta de nuevo.");
+    }
   }
 
+
+  
   const handleSignOut = async () => {
-    await fetch(`${API_URL}/api/auth/signout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      credentials: "include",
-      body: new URLSearchParams({}).toString(),
-    });
-    window.location.reload();
+    try {
+      //Pedir el CSRF token al backend
+      const res = await fetch(`${BACKEND_URL}/auth/csrf`, {
+        credentials: "include",
+      });
+      const { csrfToken } = await res.json();
+
+      //Enviar el POST al endpoint con el token
+      await fetch(`${BACKEND_URL}/auth/signout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        credentials: "include",
+        body: new URLSearchParams({
+          csrfToken,
+          callbackUrl: "http://localhost:5173/", // hacia tu frontend
+        }),
+      });
+
+      //Opcional: redirigir o limpiar sesión local
+      window.location.href = "http://localhost:5173/";
+    } catch (err) {
+      console.error("Error al cerrar sesión:", err);
+    }
   };
 
   return (
