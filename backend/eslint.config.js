@@ -31,9 +31,9 @@ export default defineConfig([
       globals: globals.node,
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': 'warn',
-      'no-console': 'off',
-      'prettier/prettier': 'warn',
-    },
-  },
+      "@typescript-eslint/no-unused-vars": "warn", // avisa si no usas una variable
+      "no-console": "off", // en backend a veces sí usamos console.log
+      "prettier/prettier": "warn", // 🔹 Advierte si no sigue formato de Prettier
+    }
+  }
 ])
