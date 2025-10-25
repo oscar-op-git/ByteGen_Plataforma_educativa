@@ -47,7 +47,7 @@ authRouter.use(
           return { 
             id: user.id_user.toString(), 
             email: user.email!, // Asumimos que el email no es null aquí
-            role: user.role,
+            role: Number(user.role ?? 2)  
             // Agrega cualquier otro campo que necesites en el token/sesión
           } as any
         },
