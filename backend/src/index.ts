@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { authRouter } from "./routes/auth.route.js"
 
+
 const app = express();
 
 app.set("trust proxy", true);
