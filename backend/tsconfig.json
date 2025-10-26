@@ -1,4 +1,4 @@
-{
+/*{
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
@@ -41,6 +41,35 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true
+  },
+  "include": ["src"]
+}*/
+{
+  "compilerOptions": {
+    /* Paths */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* Módulos/Runtime */
+    "target": "ES2020",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+
+    /* Calidad de vida */
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    /* Tipado */
+    "strict": true,
+    "skipLibCheck": true,
+
+    /* Outputs adicionales */
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    /* Opcional: imports absolutos desde src */
+    "baseUrl": "./src"
   },
   "include": ["src"]
 }

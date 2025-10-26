@@ -6,6 +6,7 @@ import { PasswordStrengthIndicator } from './PasswordStrengthIndicator'
 import { SuccessMessage } from './SuccessMessage'
 import '../styles/RegisterForm.css'
 import { useNavigate } from 'react-router-dom'
+import { register as registerService } from '../services/authService'
 
 export const RegisterForm: React.FC = () => {
   const {
@@ -24,18 +25,25 @@ export const RegisterForm: React.FC = () => {
 
   const navigate = useNavigate();
   const [success, setSuccess] = React.useState(false)
+  const [apiError, setApiError] = React.useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setApiError(null)
 
     if (!validate()) return
-
+    
     setIsSubmitting(true)
 
     try {
-      console.log('conecten el backend kks')
+      await registerService({
+        nombreCompleto: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password
+      })
       setSuccess(true)
-    } catch (error) {
+    } catch (error: any) {
+      setApiError(error?.message || 'No se pudo registrar. Intenta más tarde.')
       console.error('Error al registrar:', error)
     } finally {
       setIsSubmitting(false)
@@ -47,7 +55,8 @@ export const RegisterForm: React.FC = () => {
     resetForm()
   }
 
-  const handleLogin = () =>{
+  const handleLogin = (e: React.MouseEvent) =>{
+    e.preventDefault()
     navigate('/login')
   }
 
@@ -62,7 +71,7 @@ export const RegisterForm: React.FC = () => {
         <p className="register-form__subtitle">Completa el formulario para registrarte</p>
       </div>
 
-      <div className="register-form__fields">
+      <form className="register-form__fields" onSubmit={handleSubmit} noValidate>
         <InputField
           label="Nombre completo"
           name="name"
@@ -116,7 +125,9 @@ export const RegisterForm: React.FC = () => {
           onToggleShow={() => setShowConfirmPassword(!showConfirmPassword)}
         />
 
-        <button onClick={handleSubmit} disabled={isSubmitting} className="register-form__submit">
+        {apiError && <p style={{ color: '#dc2626', marginTop: 8 }}>{apiError}</p>}
+
+        <button type="submit" disabled={isSubmitting} className="register-form__submit">
           {isSubmitting ? (
             <>
               <div className="register-form__spinner"></div>
@@ -126,13 +137,13 @@ export const RegisterForm: React.FC = () => {
             'Registrarse'
           )}
         </button>
-      </div>
+      </form>
 
       <div className="register-form__footer">
         ¿Ya tienes cuenta?{' '}
-        <a href="" onClick={handleLogin} className="register-form__link">
+        <button onClick={handleLogin} className="register-form__link" type="button">
           Inicia sesión
-        </a>
+        </button>
       </div>
     </div>
   )

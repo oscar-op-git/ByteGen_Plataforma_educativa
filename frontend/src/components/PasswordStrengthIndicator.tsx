@@ -1,15 +1,13 @@
 import React from 'react'
 import { Check, X } from 'lucide-react'
-import { validatePasswordStrength } from '..//utils/validation.utils'
+import { validatePasswordStrength } from '../utils/validation.utils'
 import '../styles/PasswordStrengthIndicator.css'
 
 interface PasswordStrengthIndicatorProps {
   password: string
 }
 
-export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
-  password,
-}) => {
+export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({ password }) => {
   if (!password) return null
 
   const validation = validatePasswordStrength(password)
@@ -19,11 +17,7 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
     { key: 'hasUpperCase', label: 'Una letra mayúscula', valid: validation.hasUpperCase },
     { key: 'hasLowerCase', label: 'Una letra minúscula', valid: validation.hasLowerCase },
     { key: 'hasNumber', label: 'Un número', valid: validation.hasNumber },
-    {
-      key: 'hasSpecialChar',
-      label: 'Un carácter especial (!@#$%...)',
-      valid: validation.hasSpecialChar,
-    },
+    { key: 'hasSpecialChar', label: 'Un carácter especial (!@#$%...)', valid: validation.hasSpecialChar },
   ]
 
   return (
@@ -34,9 +28,7 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
           <div
             key={req.key}
             className={`password-strength__requirement ${
-              req.valid
-                ? 'password-strength__requirement--valid'
-                : 'password-strength__requirement--invalid'
+              req.valid ? 'password-strength__requirement--valid' : 'password-strength__requirement--invalid'
             }`}
           >
             <span className="password-strength__icon">
