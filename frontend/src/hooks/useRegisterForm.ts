@@ -2,29 +2,40 @@ import { useState } from 'react'
 import type { FormData, FormErrors } from '../types/auth.types'
 import { validateEmail, isPasswordValid, validateName } from '../utils/validation.utils'
 
+type ChangeEvt = React.ChangeEvent<HTMLInputElement | HTMLSelectElement>;
+
 export const useRegisterForm = () => {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
+    role: 2, // default estudiante
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }))
+  const handleChange = (e: ChangeEvt) => {
+    const { name, value } = e.target;
+    if (name === 'role') {
+      // parsea a número 2|3
+      const roleNum = Number(value) as 2 | 3;
+      setFormData(prev => ({ ...prev, role: roleNum }));
+      if (errors.role) setErrors(prev => ({ ...prev, role: undefined }));
+      return;
     }
-  }
+    setFormData(prev => ({ ...prev, [name]: value } as FormData));
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
 
   const validate = (): boolean => {
-    const newErrors: FormErrors = {}
+    const newErrors: FormErrors = {
+      role: undefined
+    }
 
     if (!formData.name.trim()) {
       newErrors.name = 'El nombre es requerido'
@@ -60,6 +71,7 @@ export const useRegisterForm = () => {
       email: '',
       password: '',
       confirmPassword: '',
+      role: 2, // default estudiante
     })
     setErrors({})
     setIsSubmitting(false)
@@ -79,5 +91,7 @@ export const useRegisterForm = () => {
     handleChange,
     validate,
     resetForm,
+    setFormData,   // opcional por si lo necesitas
+    setErrors,     // opcional por si quieres setear errors.form desde el catch
   }
 }

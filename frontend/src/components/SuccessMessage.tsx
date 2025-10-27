@@ -6,6 +6,8 @@ interface SuccessMessageProps {
   onReset: () => void
 }
 
+
+
 export const SuccessMessage: React.FC<SuccessMessageProps> = ({ onReset }) => {
   return (
     <div className="success-message">

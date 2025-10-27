@@ -3,9 +3,10 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { authRouter } from "./routes/auth.route.js"
-
+import indexRoutes from "./routes/index.js"
 
 const app = express();
+
 
 app.set("trust proxy", true);
 app.use(cors({
@@ -16,7 +17,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 // Monta Auth.js en /auth/*
+app.use(indexRoutes);
+
 app.use("/auth", authRouter)
+
+
+
 
 app.get("/", (_req, res) => res.send("API funcionando"));
 

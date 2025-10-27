@@ -47,7 +47,7 @@ export const RegisterForm: React.FC = () => {
     resetForm()
   }
 
-  const handleLogin = () =>{
+  const handleLogin = () => {
     navigate('/login')
   }
 
@@ -115,6 +115,27 @@ export const RegisterForm: React.FC = () => {
           toggleIcon={showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           onToggleShow={() => setShowConfirmPassword(!showConfirmPassword)}
         />
+
+        <div className="input-field">
+          <label htmlFor="role" className="input-field__label">Rol</label>
+          <div className="input-field__wrapper">
+            {/* opcional: icono a la izquierda */}
+            <span className="input-field__icon">
+              <User size={20} />
+            </span>
+
+            <select
+              id="role"
+              name="role"
+              value={String(formData.role)}      //  string para evitar warning
+              onChange={handleChange}            //  mismo handler genérico
+              className="input-field__input"
+            >
+              <option value="2">Estudiante</option>
+              <option value="3">Docente</option>
+            </select>
+          </div>
+        </div>
 
         <button onClick={handleSubmit} disabled={isSubmitting} className="register-form__submit">
           {isSubmitting ? (
