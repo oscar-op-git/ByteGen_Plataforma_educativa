@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo} from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom'
+import { getSession, login as loginService, getCsrf, signout } from "../services/authService";
 
 export default function LoginForm() {
   const navigate = useNavigate()
@@ -8,27 +9,11 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [session, setSession] = useState<any>(null);
-  const BACKEND_URL = "http://localhost:3000"
 
-
-  type session = {
-  user?: {
-    name?: string | null
-    email?: string | null
-    image?: string | null
-  } | null
-  // ...otros campos que devuelva Auth.js
-  } | null
-  
-  //cargar sesión al montar
   useEffect(() => {
-    fetch(`${BACKEND_URL}/auth/session`, { credentials: "include" })
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => setSession(data))
-      .catch(() => {});
+    getSession().then(setSession).catch(() => {});
   }, []);
 
-  //Este bloque es poco confiable, usarlo como guía y luego borrar
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -36,103 +21,46 @@ export default function LoginForm() {
     if (!email || !password) return setError("Todos los campos son obligatorios");
     if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres");
 
-    try {
-      // Auth.js credentials exige x-www-form-urlencoded
-      const body = new URLSearchParams({ email, password }).toString();
-      const resp = await fetch(`${BACKEND_URL}/auth/callback/credentials`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        credentials: "include", // necesario para cookies
-        body,
-      });
-
-      if (!resp.ok) {
-        const t = await resp.text();
-        throw new Error(t || "Credenciales incorrectas");
-      }
-
-      // Actualiza sesión y/o redirige
-      await new Promise((r) => setTimeout(r, 50));
-      window.location.href = "/"; // o donde quieras
-    } catch (err: any) {
-      setError(err?.message ?? "Error de inicio de sesión");
-    }
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
-      return
-    }
     setLoading(true)
-    if (email === 'test@demo.com' && password === '123456') {
-      alert('Inicio de sesión exitoso ')
-    } else {
-      setError('Credenciales incorrectas ')
+    try {
+      await loginService(email, password);
+      // redirige a home o donde prefieras
+      navigate('/home');
+    } catch (err: any) {
+      setError(err?.message ?? 'Error de inicio de sesión')
+    } finally {
+      setLoading(false)
     }
   }
-  
+
   async function handleGoogleSignIn() {
-      try {
-        //Obtener CSRF token del backend
-        const res = await fetch(`${BACKEND_URL}/auth/csrf`, { credentials: "include" });
-        if (!res.ok) throw new Error("No se pudo obtener CSRF token");
-        const { csrfToken } = await res.json();
+    try {
+      const { csrfToken } = await getCsrf();
+      const callbackUrl = new URL("/", window.location.origin).toString(); // p.ej. http://localhost:5173/
 
-        //Determinar la URL a donde volverás después del login
-        const callbackUrl = new URL("/", window.location.origin).toString(); 
-        // → Ejemplo: http://localhost:5173/
+      // Usamos form POST hacia /api/auth/signin/google
+      const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `${API}/api/auth/signin/google`;
+      form.style.display = "none";
 
-        //Crear y enviar un formulario POST (para navegación top-level segura)
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = `${BACKEND_URL}/auth/signin/google`; // apunta al provider correcto
-        form.style.display = "none";
+      form.append(
+        Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
+        Object.assign(document.createElement("input"), { name: "callbackUrl", value: callbackUrl })
+      );
 
-        // Campos requeridos
-        form.append(
-          Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
-          Object.assign(document.createElement("input"), { name: "callbackUrl", value: callbackUrl })
-        );
-
-        document.body.appendChild(form);
-        form.submit();
-      } catch (error) {
-        console.error("Error durante el inicio de sesión con Google:", error);
-        alert("Hubo un problema al iniciar sesión. Intenta de nuevo.");
-      }
+      document.body.appendChild(form);
+      form.submit();
+    } catch (error) {
+      console.error("Error durante el inicio de sesión con Google:", error);
+      alert("Hubo un problema al iniciar sesión. Intenta de nuevo.");
+    }
   }
 
   async function handleSignOut() {
-    // 1) Pedir CSRF
-    const r = await fetch(`${BACKEND_URL}/auth/csrf`, { credentials: "include" })
-    const { csrfToken } = await r.json()
-
-    // 2) POST real con form (navegación top-level)
-    const form = document.createElement("form")
-    form.method = "POST"
-    form.action = `${BACKEND_URL}/auth/signout`
-    form.style.display = "none"
-
-    form.append(
-      Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
-      Object.assign(document.createElement("input"), { name: "callbackUrl", value: "http://localhost:5173/" })
-    )
-
-    document.body.appendChild(form)
-    form.submit()
+    await signout(`${window.location.origin}/`);
   }
-
-  const emailValid = useMemo(() => {
-    if (!email) return false
-    // Valida formato + longitud mínima
-    const basicEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return basicEmail.test(email) && email.length >= 20
-  }, [email])
-
-  const passwordValid = useMemo(() => {
-    if (!password) return false
-    return password.length >= 20
-  }, [password])
-
-  const formValid = emailValid && passwordValid
 
   return (
     <form onSubmit={handleSubmit} className="login-form">
@@ -165,21 +93,14 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
+          required
         />
       </div>
 
       <button type="submit" disabled={loading}>
         {loading ? 'Ingresando…' : 'Iniciar sesión'}
       </button>
-      {/* Botón “loguearse por correo electrónico” (alias del submit) */}
-      {/* Botón con logo de Google para “correo electrónico” */}
 
-      <a href="/recuperar" onClick={() => navigate('/recuperar')}>
-        ¿Olvidaste tu contraseña?
-      </a>
-      <button type="button" className="link" onClick={() => navigate('/registro')}>
-        Regístrate
-      </button>
       <button
         type="button"
         onClick={handleGoogleSignIn}
@@ -195,13 +116,21 @@ export default function LoginForm() {
           cursor: "pointer",
           color: "#333",
           fontWeight: 500,
+          marginTop: 8
         }}>
         <img
           src="https://www.svgrepo.com/show/475656/google-color.svg"
           alt="Google"
           style={{ width: 20, height: 20 }}
         />
-        <span>Registrarse con Google</span>
+        <span>Ingresar con Google</span>
+      </button>
+
+      <a href="" onClick={(e) => { e.preventDefault(); navigate('/recover'); }}>
+        ¿Olvidaste tu contraseña?
+      </a>
+      <button type="button" className="link" onClick={() => navigate('/registro')}>
+        Regístrate
       </button>
     </form>
   );
