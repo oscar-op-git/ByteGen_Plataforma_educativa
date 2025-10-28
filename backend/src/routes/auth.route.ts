@@ -32,13 +32,25 @@ const handler = ExpressAuth({
         const password = creds?.password?.toString() || "";
         if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+            passwordHash: true,      
+            verified: true,
+            emailVerified: true,
+          }
+        });
+
         if (!user || !user.passwordHash) return null;
 
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
 
-        if (!user.verified && !user.emailVerified) return null;
+        //if (!user.verified && !user.emailVerified) return null;
 
         return {
           id: user.id,
@@ -65,7 +77,13 @@ const handler = ExpressAuth({
     async session({ session, user }) {
       if (session.user && user?.id) (session.user as any).id = user.id;
       return session;
-    }
+    },
+    async redirect({ url, baseUrl }) {
+        // Permite redirecciones al front
+        if (url.startsWith("http://localhost:5173")) return url;
+        if (url.startsWith("/")) return `${baseUrl}${url}`;
+        return baseUrl; // fallback
+    },
   },
 
   cookies: {
