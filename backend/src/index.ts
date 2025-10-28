@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { authRouter } from "./routes/auth.route.js"
+import router from "./routes/index.js"
 
 const app = express();
 
@@ -16,6 +17,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 // Monta Auth.js en /auth/*
 app.use("/auth", authRouter)
+
+// Rutas REST principales
+app.use("/api", router)
 
 app.get("/", (_req, res) => res.send("API funcionando"));
 
