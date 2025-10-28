@@ -10,11 +10,12 @@ datasource db {
 
 model community {
   id_group_group Int
-  id_user_user   Int
-  group          group @relation(fields: [id_group_group], references: [id_group], onDelete: Cascade, map: "group_fk")
-  user           User  @relation(fields: [id_user_user], references: [id_user], onDelete: Cascade, map: "user_fk")
+  id_user_user   String @db.Text
+  group          group  @relation(fields: [id_group_group], references: [id_group], onDelete: Cascade, map: "group_fk")
+  user           User   @relation(fields: [id_user_user], references: [id], onDelete: Cascade, map: "user_fk")
 
   @@id([id_group_group, id_user_user], map: "community_pk")
+  @@map("community")
 }
 
 model curso {
@@ -95,10 +96,12 @@ model pregunta {
 model respuesta {
   id_respuesta         Int       @id(map: "respuesta_pk") @default(autoincrement()) @db.SmallInt
   contenido            String?   @db.VarChar
-  id_user_user         Int?
+  id_user_user         String?   @db.Text
   id_pregunta_pregunta Int?
   pregunta             pregunta? @relation(fields: [id_pregunta_pregunta], references: [id_pregunta], map: "pregunta_fk")
-  user                 User?     @relation(fields: [id_user_user], references: [id_user], map: "user_fk")
+  user                 User?     @relation(fields: [id_user_user], references: [id], map: "user_fk")
+
+  @@map("respuesta")
 }
 
 model role {
@@ -130,7 +133,7 @@ model topico {
 }
 
 model User {
-  id_user      Int         @id(map: "user_pk") @default(autoincrement())
+  id           String      @id @map("id") @db.Text
   first_name   String?     @db.VarChar
   last_name    String?     @db.VarChar
   passwordHash String?     @map("password") @db.VarChar
