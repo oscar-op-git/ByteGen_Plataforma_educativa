@@ -65,7 +65,13 @@ const handler = ExpressAuth({
     async session({ session, user }) {
       if (session.user && user?.id) (session.user as any).id = user.id;
       return session;
-    }
+    },
+    async redirect({ url, baseUrl }) {
+        // Permite redirecciones al front
+        if (url.startsWith("http://localhost:5173")) return url;
+        if (url.startsWith("/")) return `${baseUrl}${url}`;
+        return baseUrl; // fallback
+    },
   },
 
   cookies: {
