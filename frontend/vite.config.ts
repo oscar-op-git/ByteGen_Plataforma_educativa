@@ -15,12 +15,12 @@ export default defineConfig({
         cookieDomainRewrite: 'localhost',
       },
       // si también quieres proxy para tus APIs:
-      // '/api': {
-      //   target: 'http://localhost:3000',
-      //   changeOrigin: true,
-      //   secure: false,
-      //   cookieDomainRewrite: 'localhost',
-      // },
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        cookieDomainRewrite: 'localhost',
+      },
     },
   },
   define: {
