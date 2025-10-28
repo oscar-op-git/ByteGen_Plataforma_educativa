@@ -85,10 +85,10 @@ const handler = ExpressAuth({
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string | undefined;
-        session.user.name = token.name as string | null | undefined;
-        session.user.email = token.email as string | null | undefined;
-        session.user.image = token.picture as string | null | undefined;
+        session.user.id = String(token.id ?? "");
+        session.user.name = String(token.name ?? "");
+        session.user.email = String(token.email ?? "");
+        session.user.image = String(token.picture ?? "");
       }
       return session;
     },
