@@ -25,6 +25,13 @@ export default defineConfig([
       'prettier/prettier': 'warn', // Marcamos advertencia si el formato no cumple
     },
     languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.json'], // RUTA A TU ARCHIVO tsconfig.json
+        // Otros ajustes si los necesitas, como:
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
       ecmaVersion: 2020,
       globals: globals.browser,
     },

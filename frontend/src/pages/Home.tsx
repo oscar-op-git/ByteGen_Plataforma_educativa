@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import LogoutButton from '../components/LogoutButton'
 import HomeBox from '../components/HomeBox'
 
+const roleLabel = (role?: number) => {
+  if (role === 1) return 'Administrador'
+  if (role === 2) return 'Estudiante'
+  if (role === 3) return 'Docente'
+  return 'Usuario'
+}
+
 const Home: React.FC = () => {
   const navigate = useNavigate()
 
