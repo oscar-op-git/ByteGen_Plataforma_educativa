@@ -45,11 +45,12 @@ export async function getSession() {
 }
 
 export async function login(email: string, password: string) {
+  const { csrfToken } = await getCsrf();
   const res = await fetch(`${API}/api/auth/callback/credentials?json=true`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     credentials: "include",
-    body: new URLSearchParams({ email, password }).toString(),
+    body: new URLSearchParams({csrfToken, email, password }).toString(),
   });
   return jsonOrThrow(res);
 }
