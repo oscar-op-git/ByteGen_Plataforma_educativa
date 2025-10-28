@@ -66,7 +66,7 @@ const handler = ExpressAuth({
     signIn: `${env.FRONTEND_ORIGIN}/login`,
     error: `${env.FRONTEND_ORIGIN}/login`,
     verifyRequest: `${env.FRONTEND_ORIGIN}/check-email`,
-    newUser: `${env.FRONTEND_ORIGIN}/welcome`
+    newUser: `${env.FRONTEND_ORIGIN}/login`
   },
 
   callbacks: {
