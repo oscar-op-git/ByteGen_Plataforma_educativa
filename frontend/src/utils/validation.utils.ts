@@ -21,7 +21,8 @@ export const isPasswordValid = (password: string): boolean => {
     validation.hasMinLength &&
     validation.hasUpperCase &&
     validation.hasLowerCase &&
-    validation.hasNumber
+    validation.hasNumber    &&
+    validation.hasSpecialChar
   )
 }
 
