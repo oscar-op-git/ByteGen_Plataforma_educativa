@@ -46,14 +46,28 @@ export async function getSession() {
 
 export async function login(email: string, password: string) {
   const { csrfToken } = await getCsrf();
-  const res = await fetch(`${API}/api/auth/callback/credentials?json=true`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    credentials: "include",
-    body: new URLSearchParams({csrfToken, email, password }).toString(),
-  });
-  return jsonOrThrow(res);
+
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = `${API}/api/auth/callback/credentials`;
+  form.style.display = "none";
+
+  const add = (name: string, value: string) => {
+    const i = document.createElement("input");
+    i.type = "hidden";
+    i.name = name;
+    i.value = value;
+    form.appendChild(i);
+  };
+
+  add("csrfToken", csrfToken);
+  add("email", email);
+  add("password", password);
+
+  document.body.appendChild(form);
+  form.submit(); // el server redirige y el navegador lo sigue
 }
+
 
 export async function getCsrf() {
   const res = await fetch(`${API}/api/auth/csrf`, { credentials: "include" });
