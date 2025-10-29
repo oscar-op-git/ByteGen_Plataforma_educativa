@@ -13,7 +13,8 @@ model community {
   id_user_user   String
   group          group  @relation(fields: [id_group_group], references: [id_group], onDelete: Cascade, map: "group_fk")
   user           User   @relation(fields: [id_user_user], references: [id], onDelete: Cascade, map: "user_fk")
-
+  id_role_role   Int?                
+  role           role? @relation(fields: [id_role_role], references: [id_role], map: "community_role_fk")
   @@id([id_group_group, id_user_user], map: "community_pk")
 }
 
@@ -104,7 +105,7 @@ model respuesta {
 model role {
   id_role     Int     @id(map: "role_pk") @default(autoincrement())
   description String? @db.VarChar
-  user        User[]
+  community   community[]
 }
 
 model tipo_pregunta {
@@ -138,13 +139,12 @@ model User {
   first_name    String?     @db.VarChar
   last_name     String?     @db.VarChar
   passwordHash  String?     @map("password") @db.VarChar
-  id_role_role  Int?
   verified      Boolean?    @default(false)
+  isAdmin       Boolean     @default(false)
   accounts      Account[]
   sessions      Session[]
   community     community[]
   respuesta     respuesta[]
-  role          role?       @relation(fields: [id_role_role], references: [id_role], map: "role_fk")
 
   @@map("user")
 }
