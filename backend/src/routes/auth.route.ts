@@ -5,7 +5,7 @@ import Credentials from "@auth/core/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import type { User as AuthUser } from "@auth/core/types";
-import { env, COOKIE_SECURE, IS_PROD} from "../env.js";
+import { env, COOKIE_SECURE, IS_PROD } from "../env.js";
 import { prisma } from "../utils/prisma.js";
 
 const COOKIE_NAME = "authjs.session-token";
@@ -13,8 +13,12 @@ const COOKIE_NAME = "authjs.session-token";
 const handler = ExpressAuth({
   secret: env.AUTH_SECRET,
   trustHost: true,
+
+  // Mantén adapter para OAuth (Google) → persiste User/Account
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "database" },
+
+  // 🔄 Cambiamos a JWT
+  session: { strategy: "jwt" },
 
   providers: [
     Google({
@@ -28,32 +32,27 @@ const handler = ExpressAuth({
         password: { label: "Password", type: "password" }
       },
       authorize: async (creds): Promise<AuthUser | null> => {
-        const email = creds?.email?.toString().toLowerCase();
+        const email = creds?.email?.toString();
         const password = creds?.password?.toString() || "";
         if (!email || !password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email },
+          where: { email }, // asegúrate de normalizar en registro si usas lower-case
           select: {
             id: true,
             email: true,
             name: true,
             image: true,
-            passwordHash: true,      
-            verified: true,
-            emailVerified: true,
+            passwordHash: true, // o 'password' según tu schema
           }
         });
 
         if (!user || !user.passwordHash) return null;
-
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
 
-        //if (!user.verified && !user.emailVerified) return null;
-
         return {
-          id: user.id,
+          id: String(user.id),
           email: user.email ?? null,
           name: user.name ?? null,
           image: user.image ?? null
@@ -63,26 +62,41 @@ const handler = ExpressAuth({
   ],
 
   pages: {
-    signIn: `${env.FRONTEND_ORIGIN}/login`,
-    error: `${env.FRONTEND_ORIGIN}/login`,
-    verifyRequest: `${env.FRONTEND_ORIGIN}/check-email`,
-    newUser: `${env.FRONTEND_ORIGIN}/login`
+    signIn: `/login`,
+    error: `/login`,
+    verifyRequest: `/check-email`,
+    newUser: `/home` // o elimina esta línea si no quieres paso intermedio
   },
 
   callbacks: {
-    async signIn({ account }) {
-      if (account?.provider === "google") return true;
+    async signIn() {
       return true;
     },
-    async session({ session, user }) {
-      if (session.user && user?.id) (session.user as any).id = user.id;
+
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = (user as any).id;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = String(token.id ?? "");
+        session.user.name = String(token.name ?? "");
+        session.user.email = String(token.email ?? "");
+        session.user.image = String(token.picture ?? "");
+      }
       return session;
     },
+
     async redirect({ url, baseUrl }) {
-        // Permite redirecciones al front
-        if (url.startsWith("http://localhost:5173")) return url;
-        if (url.startsWith("/")) return `${baseUrl}${url}`;
-        return baseUrl; // fallback
+      if (url.startsWith("http://localhost:5173")) return url;
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      return baseUrl;
     },
   },
 
@@ -91,9 +105,9 @@ const handler = ExpressAuth({
       name: COOKIE_NAME,
       options: {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "lax",   // con proxy al mismo origen va bien
         path: "/",
-        secure: COOKIE_SECURE,
+        secure: COOKIE_SECURE, // false en http local, true en https prod
         ...(IS_PROD && env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
       }
     },
