@@ -20,6 +20,12 @@ npm run dev
 
 cd ../frontend
 npm run dev
+```
+----Linter y formato de código----
+```bash
 
-Dependencias de frontend
-npm install lucide-react
+npm run lint //Verificar errores de linting
+
+npm run lint:fix //Corregir errores automáticamente
+
+npm run format //Formatear código con Prettier
