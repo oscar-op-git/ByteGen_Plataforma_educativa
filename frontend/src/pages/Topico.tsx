@@ -59,7 +59,22 @@ if edad >= 18:
 else:
     print("Eres menor de edad")`,
         language: 'python'
-      }
+      },
+      {
+  id: '8',
+  type: 'slides',
+  content: `{
+    "pdfUrl": "../../public/documentos/diaposRac-cisco-mikrotik.pdf",
+    "totalPages": 18,
+    "startPage": 1,
+    "audioUrl": "../../public/documentos/KAL EL NO.mp3",
+    "transcript": [
+      { "start": 0,  "end": 8,  "text": "Bienvenido/a a la lección." },
+      { "start": 8,  "end": 20, "text": "Python es legible, versátil y tiene una comunidad enorme." },
+      { "start": 20, "end": 35, "text": "Revisaremos tipos de datos básicos y cómo ejecutar código." }
+    ]
+  }`
+},
     ]
   });
 

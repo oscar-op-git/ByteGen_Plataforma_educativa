@@ -1,6 +1,6 @@
 export interface ContentBlock {
-    id: string;
-    type: 'text' | 'code' | 'image';
+  id: string
+  type: 'text' | 'code' | 'image' | 'slides'
     content: string;
     language?: string;
   }

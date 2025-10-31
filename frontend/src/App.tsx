@@ -3,6 +3,7 @@ import LoginPages from './pages/LoginPages';
 import { RegisterPage } from './pages/RegisterPage'
 import Home from './pages/Home'
 import Recover from './pages/Recover'
+import TopicLesson from './pages/Topico';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/Registro" element={<RegisterPage />} />
         <Route path='/home' element={ <Home/>} />
         <Route path='/recover' element={<Recover/>}/>
+        <Route path="/curso/python" element={<TopicLesson />} />
       </Routes>
     </Router>
   )
