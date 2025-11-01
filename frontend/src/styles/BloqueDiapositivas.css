@@ -115,3 +115,11 @@
   font-variant-numeric: tabular-nums;
   opacity: .6;
 }
+
+/* === FIX: asegurar color legible en la transcripción === */
+.pdf-transcript,
+.pdf-transcript .transcript-list,
+.pdf-transcript .transcript-line,
+.pdf-transcript .transcript-line .time {
+  color: #111; /* texto legible sobre tus tarjetas blancas */
+}
