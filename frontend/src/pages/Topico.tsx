@@ -65,7 +65,7 @@ else:
         id: '8',
         type: 'slides',
         content: `{
-        "pdfUrl": "../../public/documentos/diaposRac-cisco-mikrotik.pdf",
+        "pdfUrl": "../../public/documentos/1P_Tema 1-1.pdf",
         "totalPages": 18,
         "startPage": 1,
         "audioUrl": "../../public/documentos/KAL EL NO.mp3",
