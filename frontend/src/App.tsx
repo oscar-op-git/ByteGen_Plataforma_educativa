@@ -14,7 +14,8 @@ function App() {
         <Route path="/Registro" element={<RegisterPage />} />
         <Route path='/home' element={ <Home/>} />
         <Route path='/recover' element={<Recover/>}/>
-        <Route path="/curso/python" element={<TopicLesson />} />
+        <Route path="/topic/slides" element={<TopicLesson />} />
+        <Route path="/topic/basic" element={<TopicLesson />} />
       </Routes>
     </Router>
   )
