@@ -1,5 +1,5 @@
 // frontend/src/services/authService.ts
-const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 function jsonOrThrow(res: Response) {
   return res.json().then((data) => {
@@ -44,7 +44,7 @@ export async function getSession() {
   return res.json();
 }
 
-export async function login(email: string, password: string) {
+/*export async function login(email: string, password: string) {
   const { csrfToken } = await getCsrf();
 
   const form = document.createElement("form");
@@ -66,6 +66,22 @@ export async function login(email: string, password: string) {
 
   document.body.appendChild(form);
   form.submit(); // el server redirige y el navegador lo sigue
+}*/
+
+// ✅ LOGIN JWT: guarda token
+export async function login(email: string, password: string) {
+  const res = await fetch(`${API}/api/custom/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await jsonOrThrow(res);
+  if (data?.token) localStorage.setItem('token', data.token);
+  return data; // { message, token, user: { id, email, isAdmin } }
+}
+
+export function logout() {
+  localStorage.removeItem('token');
 }
 
 

@@ -7,6 +7,11 @@ import { env, CORS_ORIGINS } from "./env.js";
 import { errorHandler } from "./middlewares/error.js";
 import { authRouter } from "./routes/auth.route.js";
 import { customAuthRouter } from "./routes/custom-auth.route.js";
+// 🔹 NUEVO: importa tus routers
+import legacyRouter from './routes/index.js';           // tus rutas antiguas /users (createUser, etc.)
+import roleRoutes from './routes/role.route.js';        // CRUD de roles
+import userAdminRoutes from './routes/user.route.js';   // admin: listar usuarios + asignar/quitar rol
+
 
 const app = express();
 
@@ -36,6 +41,11 @@ app.use("/api/auth", authRouter);
 
 // Custom auth (registro/login propio)
 app.use("/api/custom", customAuthRouter);
+
+//SUBI YO___MEJORAR
+app.use('/api/roles', roleRoutes);            // -> GET /api/roles
+app.use('/api/users', userAdminRoutes); // -> GET /api/manage/users
+
 
 // Manejo de errores
 app.use(errorHandler);

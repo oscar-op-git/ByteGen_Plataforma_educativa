@@ -50,3 +50,62 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   });
 }
 */
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { prisma } from '../utils/prisma.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+export type AuthUser = {
+  id: string;
+  email?: string | null;
+  isAdmin: boolean;
+};
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthUser;
+    }
+  }
+}
+
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Falta token Bearer' });
+    }
+
+    const token = auth.slice('Bearer '.length).trim();
+    const secret = process.env.AUTH_SECRET; // 👈 usa AUTH_SECRET
+    if (!secret) return res.status(500).json({ message: 'AUTH_SECRET no configurado' });
+
+    const payload = jwt.verify(token, secret) as any;
+
+    // 👇 Acepta varias formas por si luego cambias el emisor:
+    const userId: string | undefined = payload.userId || payload.sub || payload.id;
+    if (!userId) return res.status(401).json({ message: 'Token inválido (sin userId)' });
+
+    // Carga usuario desde DB (mejor que confiar en el payload)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, isAdmin: true },
+    });
+
+    if (!user) return res.status(401).json({ message: 'Usuario no encontrado' });
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      isAdmin: user.isAdmin === true, // debe ser true para pasar requireAdmin
+    };
+
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: 'Token inválido o expirado' });
+  }
+}
+
+export default requireAuth;
