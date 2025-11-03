@@ -6,6 +6,7 @@ import CodeOutput from '../components/SalidaCodigo';
 import PdfBlock from '../components/BloqueDiapositivas';
 import LessonNavigation from '../components/BotonesNavegacion';
 import '../styles/Topico.css';
+import BloqueVideo from '../components/BloqueVideo';
 
 // Tipo para Pyodide
 interface PyodideInterface {
@@ -24,7 +25,7 @@ export default function TopicLesson() {
     id: '1',
     title: 'Introducción a Python',
     blocks: [
-      {
+      /*{
         id: '1',
         type: 'text',
         content: 'Python es un lenguaje de programación de alto nivel, interpretado y de propósito general. Es conocido por su sintaxis clara y legible, lo que lo hace ideal para principiantes.'
@@ -33,12 +34,12 @@ export default function TopicLesson() {
         id: '2',
         type: 'code',
         content: `# Mi primer programa en Python
-print("¡Hola Mundo!")
-print("Python es genial")
+          print("¡Hola Mundo!")
+          print("Python es genial")
 
-# Variables
-nombre = "Estudiante"
-print(f"Bienvenido, {nombre}!")`,
+          # Variables
+          nombre = "Estudiante"
+          print(f"Bienvenido, {nombre}!")`,
         language: 'python'
       },
       {
@@ -50,15 +51,15 @@ print(f"Bienvenido, {nombre}!")`,
         id: '4',
         type: 'code',
         content: `# Estructuras de control
-for i in range(5):
-    print(f"Número: {i}")
+          for i in range(5):
+              print(f"Número: {i}")
 
-# Condicionales
-edad = 18
-if edad >= 18:
-    print("Eres mayor de edad")
-else:
-    print("Eres menor de edad")`,
+          # Condicionales
+          edad = 18
+          if edad >= 18:
+              print("Eres mayor de edad")
+          else:
+              print("Eres menor de edad")`,
         language: 'python'
       },
       {
@@ -75,13 +76,24 @@ else:
           { "start": 20, "end": 35, "text": "Revisaremos tipos de datos básicos y cómo ejecutar código." }
           ]
         }`,
+      },*/
+      {
+        id: '9',
+        type: 'video',
+        content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
       },
-    ]
+    ],
   });
 
   // --- Determinar variante del tópico ---
   const variant: TopicVariant =
-  topic.variant ?? (topic.blocks.some(b => b.type === 'slides') ? 'slides' : 'basic');
+  topic.variant
+    ? topic.variant
+    : topic.blocks.some(b => b.type === 'slides')
+      ? 'slides'
+      : topic.blocks.some(b => b.type === 'video')
+        ? 'video'
+        : 'basic';
   //cargar pyodide solo si es tipo basico
   const [codeOutput, setCodeOutput] = useState<string>('');
   const [currentLesson, setCurrentLesson] = useState(1);
@@ -195,12 +207,12 @@ sys.stdout = StringIO()
       transcript: { start: number; end: number; text: string }[];
     }
 
-let payload: SlidesPayload | null = null;
-try {
-  payload = slidesBlock ? (JSON.parse(slidesBlock.content) as SlidesPayload) : null;
-} catch {
-  payload = null;
-}
+    let payload: SlidesPayload | null = null;
+    try {
+      payload = slidesBlock ? (JSON.parse(slidesBlock.content) as SlidesPayload) : null;
+    } catch {
+      payload = null;
+    }
 
     return (
       <>
@@ -219,10 +231,36 @@ try {
       </>
     );
   };
+
+  const renderVideo = (blocks: ContentBlock[]) => {
+    const videoBlock = blocks.find((b) => b.type === 'video')
+    const urlOrId = videoBlock?.content ?? ''
+    return (
+      <>
+        <TopicHeader title={topic.title} lessonNumber={currentLesson} />
+        {urlOrId ? (
+          <BloqueVideo urlOrId={urlOrId} title={topic.title} />
+        ) : (
+          <p>No hay URL o ID de YouTube.</p>
+        )}
+        <LessonNavigation
+          currentLesson={currentLesson}
+          totalLessons={10}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+        />
+      </>
+    )
+  }
+
   return (
     <div className="topic-lesson-container">
       <div className="topic-lesson-wrapper">
-        {variant === 'basic' ? renderBasic(topic.blocks) : renderSlides(topic.blocks)}
+        {variant === 'basic'
+          ? renderBasic(topic.blocks)
+          : variant === 'slides'
+            ? renderSlides(topic.blocks)
+            : renderVideo(topic.blocks)}
       </div>
     </div>
   );

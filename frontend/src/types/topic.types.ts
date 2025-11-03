@@ -1,8 +1,8 @@
-export type TopicVariant = 'basic' | 'slides';
+export type TopicVariant = 'basic' | 'slides' | 'video';
 
 export interface ContentBlock {
   id: string
-  type: 'text' | 'code' | 'image' | 'slides'
+  type: 'text' | 'code' | 'image' | 'slides' | 'video'
   content: string;
   language?: string;
 }
