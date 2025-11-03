@@ -4,6 +4,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import Home from './pages/Home'
 import Recover from './pages/Recover'
 import VerifyEmail from './pages/VerifyEmail';
+import ProfileSettingsPage from './pages/ProfileSettingsPage'
 
 function App() {
   return (
@@ -13,8 +14,9 @@ function App() {
         <Route path="/login" element={<LoginPages />} />
         <Route path="/registro" element={<RegisterPage />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path='/home' element={ <Home/>} />
-        <Route path='/recover' element={<Recover/>}/>
+        <Route path='/home' element={<Home />} />
+        <Route path='/recover' element={<Recover />} />
+        <Route path="/perfil" element={<ProfileSettingsPage />} />
       </Routes>
     </Router>
   )

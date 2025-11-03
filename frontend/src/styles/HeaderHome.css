@@ -1,0 +1,260 @@
+/* ========== Reset suave ========== */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; color: #111827; background: #f3f4f6; }
+a { color: inherit; text-decoration: none; }
+
+/* ========== Layout base de páginas (reutiliza tu login-page / login-box) ========== */
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 64px);
+  padding: 24px 16px;
+  background: #f3f4f6;
+}
+
+.login-box {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 960px;
+  text-align: left;
+}
+
+/* Version centrada angosta (para login/register) */
+.login-page--center { align-items: center; }
+.login-box--narrow { max-width: 420px; text-align: center; }
+
+/* Titulares reutilizables */
+.project-name {
+  font-size: 28px;
+  font-weight: 800;
+  color: #2563eb;
+  margin: 0 0 6px 0;
+}
+.title {
+  margin: 4px 0 16px 0;
+  color: #1e293b;
+  font-size: 16px;
+}
+
+/* ========== Header Home ========== */
+.header-home {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.header-home__brand {
+  font-weight: 800;
+  font-size: 20px;
+  color: #2563eb;
+  letter-spacing: .2px;
+}
+.header-home__nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ========== Botón Custom (usa tu CustomButton) ========== */
+.custom-btn {
+  padding: 10px 14px;
+  background: #e5e7eb; /* plomo */
+  color: #111827;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter .15s ease, transform .05s ease;
+}
+.custom-btn:hover { filter: brightness(.97); }
+.custom-btn:active { transform: translateY(1px); }
+.custom-btn:disabled { opacity: .6; cursor: not-allowed; }
+.custom-btn--full { width: 100%; }
+.custom-btn--danger { background: #ef4444; color: #fff; }
+
+/* ========== Menú de usuario en header ========== */
+.user-menu { position: relative; }
+.user-menu__trigger {
+  appearance: none;
+  background: #e5e7eb;
+  color: #111827;
+  border: none;
+  border-radius: 9999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.user-menu__dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.08);
+  min-width: 200px;
+  overflow: hidden;
+  z-index: 50;
+}
+.user-menu__item {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  background: #f3f4f6; /* plomo */
+  border: none;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.user-menu__item:hover { filter: brightness(.98); }
+.user-menu__item--danger { background: #ef4444; color: #fff; }
+
+/* ========== Formularios (inputs y grupos) ========== */
+.login-form { display: flex; flex-direction: column; gap: 14px; }
+.form-group { display: flex; flex-direction: column; align-items: flex-start; }
+
+label { margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #1e293b; }
+input, select, textarea {
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 14px;
+  background-color: #fff;
+  color: #111827;
+  outline: none;
+  transition: all .2s ease;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+input::placeholder { color: #94a3b8; }
+
+/* Error de input */
+.input-error { border-color: #ef4444 !important; background: #fef2f2; }
+.error { color: #dc2626; font-size: 13px; }
+
+/* ========== Badge de Rol ========== */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #e5e7eb;
+  color: #111827;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-weight: 800;
+  position: relative;
+}
+.role-badge__menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.08);
+  overflow: hidden;
+  z-index: 40;
+  min-width: 220px;
+}
+.role-badge__item {
+  display: block;
+  width: 100%;
+  background: #f3f4f6;
+  border: none;
+  padding: 8px 12px;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+}
+.role-badge__item:hover { filter: brightness(.98); }
+
+/* ========== Grid de cursos y cards ========== */
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 960px) {
+  .courses-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .courses-grid { grid-template-columns: 1fr; }
+}
+
+.course-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+}
+.course-card__menu { position: absolute; top: 8px; right: 8px; }
+.course-card__title { font-weight: 800; margin: 6px 0; font-size: 16px; }
+.course-card__teacher { color: #6b7280; margin-bottom: 10px; }
+
+/* ========== Modal base (Unirse a clase / confirmaciones) ========== */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid #e5e7eb;
+}
+.modal__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+/* ========== Footer ========== */
+.footer-home {
+  text-align: center;
+  padding: 16px;
+  color: #6b7280;
+}
+
+/* ========== Enlaces extra / links subrayados ========== */
+.links {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.link-underline {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #111;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font: inherit;
+}
+.link-underline:hover { opacity: 0.8; }
+
+/* ========== Estados y helpers ========== */
+.hidden { display: none !important; }
+.center { display: flex; align-items: center; justify-content: center; }
+
+/* ========== Toaster (react-hot-toast) ajustes suaves ========== */
+:root {
+  --toastify-toast-min-height: 40px;
+  --toastify-color-success: #16a34a;
+  --toastify-color-error: #ef4444;
+}
