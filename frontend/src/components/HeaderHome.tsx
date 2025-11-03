@@ -1,6 +1,8 @@
 // src/components/HeaderHome.tsx
 import React from 'react'
 import CustomButton from './CustomBotton'
+import "../styles/HeaderHome.css"
+import { Link } from 'react-router-dom'
 
 type HeaderHomeProps = {
   isLoggedIn: boolean
@@ -12,7 +14,7 @@ type HeaderHomeProps = {
   onOpenUserMenu: () => void
   userMenuOpen: boolean
   onCloseUserMenu: () => void
-  onUserMenuAction: (action: 'perfil'|'config'|'ayuda'|'salir') => void
+  onUserMenuAction: (action: 'perfil' | 'config' | 'ayuda' | 'salir') => void
 }
 
 const HeaderHome: React.FC<HeaderHomeProps> = ({
@@ -38,8 +40,9 @@ const HeaderHome: React.FC<HeaderHomeProps> = ({
 
   return (
     <header className="header-home">
-      <div className="header-home__brand">edumastercrack</div>
-
+      <Link to="/home" className="header-home__brand header-home__brand--clickable">
+        EduMasterCrack
+      </Link>
       <nav className="header-home__nav">
         <CustomButton label="Home" onClick={onGoHome} fullWidth={false} />
         <CustomButton label="Cursos" onClick={onGoCursos} fullWidth={false} />

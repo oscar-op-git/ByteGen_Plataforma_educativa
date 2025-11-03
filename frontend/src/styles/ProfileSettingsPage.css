@@ -1,0 +1,42 @@
+/* Mantén el layout del login: .login-page y .login-box ya existen */
+
+/* Bloque interno del perfil */
+.profile { padding: 8px; }
+.profile__header { margin-bottom: 12px; }
+
+/* Avatar centrado */
+.profile__avatar {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+}
+.profile__avatar-circle {
+  width: 120px; height: 120px; border-radius: 50%;
+  border: 2px solid #e5e7eb; background: #f3f4f6;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.profile__upload { text-align: center; margin-bottom: 12px; }
+
+/* Formulario interno */
+.profile__form { display: grid; gap: 12px; }
+.profile__row { display: flex; flex-direction: column; gap: 6px; }
+.profile__row label { font-weight: 600; color: #1f2937; }
+
+.profile__row input {
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  outline: none;
+}
+.profile__row input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.08);
+}
+
+.profile__actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+

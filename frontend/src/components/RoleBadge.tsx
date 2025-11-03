@@ -1,32 +1,37 @@
 import React from 'react'
+import '../styles/Home.css' // reutilizamos clases del Home (role-badge__menu / item)
 
-type RoleBadgeProps = {
+type Props = {
   role: 1|2|3
   onChangeRoleView: (role: 1|2|3) => void
+  allowAdminSwitch?: boolean // si es false, no se muestra ni permite admin
+  isAdminNow?: boolean       // si el usuario actual es admin (rol 1), NO abre menú
 }
 
-const roleText = (r: 1|2|3) => r===1 ? 'Admin' : r===2 ? 'Estudiante' : 'Docente'
+const toText = (r:1|2|3)=> r===1?'Admin': r===2?'Estudiante':'Docente'
 
-const RoleBadge: React.FC<RoleBadgeProps> = ({ role, onChangeRoleView }) => {
+const RoleBadge: React.FC<Props> = ({ role, onChangeRoleView, allowAdminSwitch = false, isAdminNow = false }) => {
   const [open, setOpen] = React.useState(false)
 
-  React.useEffect(() => {
-    const close = (e: MouseEvent) => {
-      const t = e.target as HTMLElement
-      if (!t.closest('.role-badge')) setOpen(false)
-    }
-    document.addEventListener('click', close)
-    return () => document.removeEventListener('click', close)
-  }, [])
+  const toggle = () => {
+    if (isAdminNow) return // Admin no cambia rol
+    setOpen(v=>!v)
+  }
+
+  const choose = (r:1|2|3) => {
+    if (!allowAdminSwitch && r === 1) return
+    onChangeRoleView(r)
+    setOpen(false)
+  }
 
   return (
-    <div className="role-badge" onClick={() => setOpen(v=>!v)}>
-      Rol: {roleText(role)}
+    <div className="home-role" onClick={toggle} title={isAdminNow ? 'Admin no puede cambiar rol' : 'Cambiar rol'}>
+      Rol: {toText(role)} <span className="home-role__hint">(clic para cambiar)</span>
       {open && (
         <div className="role-badge__menu">
-          <button className="role-badge__item" onClick={() => onChangeRoleView(2)}>Estudiante</button>
-          <button className="role-badge__item" onClick={() => onChangeRoleView(3)}>Docente (editor/ejecutor)</button>
-          <button className="role-badge__item" onClick={() => onChangeRoleView(1)}>Admin</button>
+          <button className="role-badge__item" onClick={()=>choose(2)}>Estudiante</button>
+          <button className="role-badge__item" onClick={()=>choose(3)}>Docente</button>
+          {allowAdminSwitch && <button className="role-badge__item" onClick={()=>choose(1)}>Admin</button>}
         </div>
       )}
     </div>

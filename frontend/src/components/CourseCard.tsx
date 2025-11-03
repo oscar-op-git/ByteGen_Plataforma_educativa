@@ -1,6 +1,6 @@
-// src/components/CourseCard.tsx
 import React from 'react'
 import CustomButton from './CustomBotton'
+import '../styles/Home.css' // usa clases de card
 
 type Course = { id: string; title: string; teacher: string; hidden?: boolean }
 

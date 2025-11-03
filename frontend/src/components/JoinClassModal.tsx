@@ -1,6 +1,6 @@
-// src/components/JoinClassModal.tsx
 import React from 'react'
 import CustomButton from './CustomBotton'
+import '../styles/JoinClass.css'
 
 type Props = {
   open: boolean
@@ -14,18 +14,16 @@ const JoinClassModal: React.FC<Props> = ({ open, onClose, onJoin }) => {
   if (!open) return null
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal">
-        <h3 style={{ fontWeight: 800, marginBottom: 8 }}>Unirse a clase</h3>
+    <div className="join-modal__backdrop" onClick={onClose}>
+      <div className="join-modal" onClick={e => e.stopPropagation()}>
+        <h3>Unirse a clase</h3>
         <p>Ingresa el código de la clase:</p>
         <input
-          className="input-field__input"
           placeholder="ABC-1234"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          style={{ width: '100%', marginTop: 8 }}
         />
-        <div className="modal__actions">
+        <div className="join-modal__actions">
           <CustomButton label="Cancelar" onClick={onClose} fullWidth={false} />
           <CustomButton label="Unirse" onClick={() => onJoin(code)} fullWidth={false} />
         </div>
