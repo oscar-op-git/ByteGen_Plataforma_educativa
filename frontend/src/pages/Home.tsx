@@ -14,7 +14,7 @@ type User = {
   id: string
   name: string
   email: string
-  id_role_role: 1|2|3   // 1=Admin, 2=Estudiante, 3=Docente
+  id_role_role: 1 | 2 | 3   // 1=Admin, 2=Estudiante, 3=Docente
 }
 
 type Course = { id: string; title: string; teacher: string; hidden?: boolean }
@@ -29,7 +29,7 @@ const Home: React.FC = () => {
     email: 'juan@example.com',
     id_role_role: 2,
   })
-  const [roleView, setRoleView] = React.useState<1|2|3>(user.id_role_role)
+  const [roleView, setRoleView] = React.useState<1 | 2 | 3>(user.id_role_role)
   const [userMenuOpen, setUserMenuOpen] = React.useState(false)
   const [courses, setCourses] = React.useState<Course[]>([
     { id: 'c1', title: 'Introduccion a python', teacher: 'Prof. Ramírez' },
@@ -42,7 +42,7 @@ const Home: React.FC = () => {
   const [showHidden, setShowHidden] = React.useState(false)
   const [joinOpen, setJoinOpen] = React.useState(false)
 
-  const onUserMenuAction = async (a: 'perfil'|'config'|'ayuda'|'salir') => {
+  const onUserMenuAction = async (a: 'perfil' | 'config' | 'ayuda' | 'salir') => {
     if (a === 'salir') {
       const p = fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, {
         method: 'POST',
@@ -89,12 +89,12 @@ const Home: React.FC = () => {
       return (
         <>
           <div className="home-actions" style={{ justifyContent: 'flex-end' }}>
-            <CustomButton label="Unirse a clase" onClick={() => setJoinOpen(true)} fullWidth={false}/>
+            <CustomButton label="Unirse a clase" onClick={() => setJoinOpen(true)} fullWidth={false} />
           </div>
           <CoursesGrid
             courses={courses}
             showHidden={showHidden}
-            onToggleShowHidden={() => setShowHidden(v=>!v)}
+            onToggleShowHidden={() => setShowHidden(v => !v)}
             onEnter={onEnterCourse}
             onToggleHidden={onToggleHidden}
           />
@@ -105,21 +105,20 @@ const Home: React.FC = () => {
       // Docente
       return (
         <div className="home-actions">
-          <CustomButton label="Editar curso" onClick={() => toast('Editar curso (pendiente)')} fullWidth={false}/>
-          <CustomButton label="Unirse a clase" onClick={() => setJoinOpen(true)} fullWidth={false}/>
+          <CustomButton label="Editar curso" onClick={() => toast('Editar curso (pendiente)')} fullWidth={false} />
+          <CustomButton label="Unirse a clase" onClick={() => setJoinOpen(true)} fullWidth={false} />
         </div>
       )
     }
     // Admin (no puede cambiar rol desde badge)
     return (
       <div className="home-actions">
-        <CustomButton label="Editar curso" onClick={() => toast('Editar curso (pendiente)')} fullWidth={false}/>
-        <CustomButton label="Editar curso base" onClick={() => toast('Editar curso base (pendiente)')} fullWidth={false}/>
-        <CustomButton label="Unirse a clase" onClick={() => setJoinOpen(true)} fullWidth={false}/>
+        <CustomButton label="Editar curso" onClick={() => toast('Editar curso (pendiente)')} fullWidth={false} />
+        <CustomButton label="Editar curso base" onClick={() => toast('Editar curso base (pendiente)')} fullWidth={false} />
+        <CustomButton label="Unirse a clase" onClick={() => setJoinOpen(true)} fullWidth={false} />
       </div>
     )
   }
-
   return (
     <>
       <HeaderHome
@@ -129,10 +128,12 @@ const Home: React.FC = () => {
         onGoCursos={() => toast('Cursos (pendiente)')}
         onGoActividades={() => toast('Actividades (pendiente)')}
         onGoLogin={() => navigate('/login')}
-        onOpenUserMenu={() => setUserMenuOpen(v=>!v)}
+        onOpenUserMenu={() => setUserMenuOpen(v => !v)}
         onCloseUserMenu={() => setUserMenuOpen(false)}
         userMenuOpen={userMenuOpen}
         onUserMenuAction={onUserMenuAction}
+        isAdmin={roleView === 1}
+        onAssignRoles={() => alert('Asignar roles (mock)')}
       />
 
       <div className="home-page">
@@ -145,7 +146,7 @@ const Home: React.FC = () => {
         </HomeBox>
       </div>
 
-      <JoinClassModal open={joinOpen} onClose={() => setJoinOpen(false)} onJoin={onJoin}/>
+      <JoinClassModal open={joinOpen} onClose={() => setJoinOpen(false)} onJoin={onJoin} />
       <FooterHome />
     </>
   )

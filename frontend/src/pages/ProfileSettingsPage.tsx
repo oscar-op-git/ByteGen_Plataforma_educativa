@@ -16,7 +16,7 @@ const ProfileSettingsPage: React.FC = () => {
   const [userEmail, setUserEmail] = React.useState('juan@example.com')
   const [currentPass, setCurrentPass] = React.useState('')
   const [newPass, setNewPass] = React.useState('')
-  const [avatar, setAvatar] = React.useState<string | null>(null)
+  const [avatar] = React.useState<string | null>(null)
   const [userMenuOpen, setUserMenuOpen] = React.useState(false)
 
   const handleUserMenuAction = async (a: 'perfil'|'config'|'ayuda'|'salir') => {

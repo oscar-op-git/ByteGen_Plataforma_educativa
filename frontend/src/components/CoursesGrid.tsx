@@ -4,6 +4,7 @@ import CourseCard from './CourseCard'
 import CustomButton from './CustomBotton'
 import '../styles/Home.css'
 
+
 type Course = { id: string; title: string; teacher: string; hidden?: boolean }
 
 type Props = {
@@ -19,6 +20,7 @@ const CoursesGrid: React.FC<Props> = ({
 }) => {
   const visibles = courses.filter(c => !c.hidden)
   const ocultos  = courses.filter(c => c.hidden)
+  
 
   return (
     <>

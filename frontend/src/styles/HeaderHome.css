@@ -35,7 +35,7 @@
 
 .header-home__link:hover,
 .header-home__btn:hover {
-  filter: brightness(.98);
+  filter: brightness(.98);  
 }
 
 .user-menu {
@@ -45,12 +45,17 @@
 .user-menu__trigger {
   appearance: none;
   background: #e5e7eb;
-  color: #111827;
+  color: #2563eb;
   border: none;
   border-radius: 9999px;
   padding: 8px 12px;
   cursor: pointer;
   font-weight: 600;
+}
+
+.user-menu__trigger:hover {
+  background: #2563eb; /* <-- color al hover */
+  color: #e5e7eb;
 }
 
 .user-menu__dropdown {
@@ -81,11 +86,11 @@
 
 .user-menu__item:hover {
   filter: brightness(.98);
+  color: #e5e7eb  ;
 }
 
 .user-menu__item--danger {
-  background: #ef4444;
-  color: #fff;
+  color: #2563eb;
 }
 .role-badge {
   display: inline-flex;
@@ -159,6 +164,7 @@
   letter-spacing: .2px;
   line-height: 1;
   text-decoration: none;
+
 }
 
 .profile-box {

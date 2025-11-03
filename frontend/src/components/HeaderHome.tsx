@@ -11,10 +11,13 @@ type HeaderHomeProps = {
   onGoCursos: () => void
   onGoActividades: () => void
   onGoLogin: () => void
+  
   onOpenUserMenu: () => void
   userMenuOpen: boolean
   onCloseUserMenu: () => void
   onUserMenuAction: (action: 'perfil' | 'config' | 'ayuda' | 'salir') => void
+  isAdmin?: boolean
+  onAssignRoles?: () => void
 }
 
 const HeaderHome: React.FC<HeaderHomeProps> = ({
@@ -27,7 +30,9 @@ const HeaderHome: React.FC<HeaderHomeProps> = ({
   onOpenUserMenu,
   userMenuOpen,
   onCloseUserMenu,
-  onUserMenuAction
+  onUserMenuAction,
+  isAdmin = false,
+  onAssignRoles,
 }) => {
   React.useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -45,6 +50,13 @@ const HeaderHome: React.FC<HeaderHomeProps> = ({
       </Link>
       <nav className="header-home__nav">
         <CustomButton label="Home" onClick={onGoHome} fullWidth={false} />
+        {isAdmin && (
+          <CustomButton
+            label="Asignar roles"
+            onClick={onAssignRoles}
+            fullWidth={false}
+          />
+        )}
         <CustomButton label="Cursos" onClick={onGoCursos} fullWidth={false} />
         <CustomButton label="Actividades" onClick={onGoActividades} fullWidth={false} />
 
