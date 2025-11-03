@@ -13,7 +13,6 @@ model community {
   id_user_user   String
   group          group  @relation(fields: [id_group_group], references: [id_group], onDelete: Cascade, map: "group_fk")
   user           User   @relation(fields: [id_user_user], references: [id], onDelete: Cascade, map: "user_fk")
-
   @@id([id_group_group, id_user_user], map: "community_pk")
 }
 
@@ -130,7 +129,7 @@ model topico {
 }
 
 model User {
-  id            String      @id
+  id            String      @id @default(cuid())
   name          String?     @db.VarChar
   email         String?     @unique @db.VarChar
   emailVerified DateTime?
@@ -138,13 +137,14 @@ model User {
   first_name    String?     @db.VarChar
   last_name     String?     @db.VarChar
   passwordHash  String?     @map("password") @db.VarChar
-  id_role_role  Int?
   verified      Boolean?    @default(false)
+  isAdmin       Boolean     @default(false)
+  id_role_role  Int?
+  role          role?       @relation(fields: [id_role_role], references: [id_role], map: "role_fk")
   accounts      Account[]
   sessions      Session[]
   community     community[]
   respuesta     respuesta[]
-  role          role?       @relation(fields: [id_role_role], references: [id_role], map: "role_fk")
 
   @@map("user")
 }

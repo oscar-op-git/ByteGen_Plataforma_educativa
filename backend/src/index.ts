@@ -10,19 +10,24 @@ import { customAuthRouter } from "./routes/custom-auth.route.js";
 
 const app = express();
 
-app.use(helmet());
-app.use(morgan("dev"));
-app.use(express.json());
-app.use(cookieParser());
+app.set("trust proxy", true);
+
 
 app.use(
   cors({
-    origin: CORS_ORIGINS,
+    origin: env.FRONTEND_ORIGIN,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
+app.use(helmet());
+app.use(morgan("dev"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
@@ -35,9 +40,6 @@ app.use("/api/custom", customAuthRouter);
 // Manejo de errores
 app.use(errorHandler);
 
-// Si está detrás de un proxy (ej. Heroku, Nginx), confiar en el primer proxy,REVISAR ESTO
-app.set("trust proxy", 1);
-
-app.listen(env.PORT, () => {
-  console.log(`API listening on http://localhost:${env.PORT} (AUTH_URL=${env.AUTH_URL})`);
-});
+app.get("/", (_req, res) => res.send("API funcionando"));
+const PORT = Number(process.env.PORT) || 3000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
