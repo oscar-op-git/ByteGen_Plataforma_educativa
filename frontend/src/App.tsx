@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import Recover from './pages/Recover'
 import VerifyEmail from './pages/VerifyEmail';
 import ProfileSettingsPage from './pages/ProfileSettingsPage'
+import RolesAdminPage from './pages/RolesAdminPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path='/home' element={<Home />} />
         <Route path='/recover' element={<Recover />} />
         <Route path="/perfil" element={<ProfileSettingsPage />} />
+        <Route path="/admin/roles" element={<RolesAdminPage />} />
       </Routes>
     </Router>
   )

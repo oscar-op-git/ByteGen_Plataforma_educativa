@@ -27,7 +27,7 @@ const Home: React.FC = () => {
     id: 'u1',
     name: 'Juan Pérez',
     email: 'juan@example.com',
-    id_role_role: 2,
+    id_role_role: 1,
   })
   const [roleView, setRoleView] = React.useState<1 | 2 | 3>(user.id_role_role)
   const [userMenuOpen, setUserMenuOpen] = React.useState(false)
@@ -133,7 +133,7 @@ const Home: React.FC = () => {
         userMenuOpen={userMenuOpen}
         onUserMenuAction={onUserMenuAction}
         isAdmin={roleView === 1}
-        onAssignRoles={() => alert('Asignar roles (mock)')}
+        onAssignRoles={() => navigate('/admin/roles')}
       />
 
       <div className="home-page">
