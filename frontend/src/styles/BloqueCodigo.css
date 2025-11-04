@@ -1,0 +1,107 @@
+.code-block {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.code-block:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.code-block-header {
+  background-color: #1f2937;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.code-block-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.code-block-header .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #4ade80;
+}
+
+.code-block-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #d1d5db;
+}
+
+.execute-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #16a34a;
+  color: white;
+  padding: 0.375rem 1rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.execute-button:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.execute-button:disabled {
+  background-color: #6b7280;
+  cursor: not-allowed;
+}
+
+.execute-button .icon-small {
+  width: 1rem;
+  height: 1rem;
+}
+
+.execute-button .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.code-block-textarea {
+  width: 100%;
+  background-color: #111827;
+  color: #f3f4f6;
+  padding: 1rem;
+  margin: 0;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  font-family: 'Courier New', Courier, monospace;
+  resize: vertical;
+  min-height: 200px;
+  line-height: 1.5;
+}
+
+.code-block-pre {
+  background-color: #111827;
+  padding: 1rem;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.code-block-code {
+  color: #f3f4f6;
+  font-size: 0.875rem;
+  font-family: 'Courier New', Courier, monospace;
+}

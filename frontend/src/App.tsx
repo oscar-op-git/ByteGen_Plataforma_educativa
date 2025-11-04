@@ -25,3 +25,10 @@ function App() {
 }
 
 export default App
+*/import TopicLesson from './pages/Topico';
+
+function App() {
+  return <TopicLesson />;
+}
+
+export default App;
