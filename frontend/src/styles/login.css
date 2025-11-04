@@ -1,0 +1,152 @@
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f3f4f6;
+}
+
+.login-box {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  width: 400px;
+  text-align: center;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+label {
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+input {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  width: 95%;
+  font-size: 14px;
+  background-color: #f3f4f6;
+  color: black;
+}
+
+input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0px 0px 4px rgba(37, 99, 235, 0.5);
+}
+
+button {
+  padding: 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+.error {
+  color: red;
+  font-size: 14px;
+}
+
+/* Nombre del proyecto */
+.project-name {
+  font-size: 36px;
+  font-weight: 700;
+  color: #2563eb;
+  margin-bottom: 10px;
+}
+
+/* Subtítulo */
+.title {
+  margin: 20px;
+  color: #1e293b;
+}
+
+/* Links extra */
+.extra-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 10px 0;
+}
+
+.extra-links a {
+  color: #2563eb;
+  font-size: 14px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.extra-links a:hover {
+  color: #1d4ed8;
+}
+
+/* Botón con icono */
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.google-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+.google-icon svg path:nth-child(1) {
+  fill: #4285f4;
+}
+.google-icon svg path:nth-child(2) {
+  fill: #34a853;
+}
+.google-icon svg path:nth-child(3) {
+  fill: #fbbc05;
+}
+.google-icon svg path:nth-child(4) {
+  fill: #ea4335;
+}
+
+/* Enlaces estilo <a> subrayado minimalista */
+.links {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.link-underline {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #111;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font: inherit;
+}
+.link-underline:hover {
+  opacity: 0.8;
+}

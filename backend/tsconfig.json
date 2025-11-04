@@ -1,15 +1,16 @@
-{
+/*{
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
     "rootDir": "./src",
     "outDir": "./dist",
-
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "nodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
-    "target": "es6",
-    "types": [],
+    "types": ["jest", "node"],
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
@@ -39,6 +40,36 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}*/
+{
+  "compilerOptions": {
+    /* Paths */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* Módulos/Runtime */
+    "target": "ES2020",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+
+    /* Calidad de vida */
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    /* Tipado */
+    "strict": true,
     "skipLibCheck": true,
-  }
+
+    /* Outputs adicionales */
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    /* Opcional: imports absolutos desde src */
+    "baseUrl": "./src"
+  },
+  "include": ["src"]
 }

@@ -1,0 +1,35 @@
+.join-modal__backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+
+.join-modal {
+  width: 460px; max-width: calc(100vw - 40px);
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 40px rgba(0,0,0,.15);
+  padding: 18px;
+}
+
+.join-modal h3 { margin: 0 0 8px 0; font-weight: 800; }
+.join-modal p { margin: 0; color: #4b5563; }
+
+.join-modal input {
+  width: 95%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  outline: none;
+}
+.join-modal input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.08);
+}
+
+.join-modal__actions {
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;
+}
