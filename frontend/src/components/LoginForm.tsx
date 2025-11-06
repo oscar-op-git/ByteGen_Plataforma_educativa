@@ -26,7 +26,7 @@ export default function LoginForm() {
       //await loginService(email, password);
       await loginService(email.trim().toLowerCase(), password);
       // redirige a home o donde prefieras
-      navigate('/home');
+      //navigate('/home');
     } catch (err: any) {
       setError(err?.message ?? 'Error de inicio de sesión')
     } finally {
