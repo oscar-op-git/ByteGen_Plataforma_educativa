@@ -5,8 +5,9 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { env, CORS_ORIGINS } from "./env.js";
 import { errorHandler } from "./middlewares/error.js";
-import { authRouter } from "./routes/auth.route.js";
-import { customAuthRouter } from "./routes/custom-auth.route.js";
+//import { authRouter } from "./routes/auth.route.js";
+//import { customAuthRouter } from "./routes/custom-auth.route.js";
+import { authRouter } from "./routes/auth.js"; // ⇦ usar el archivo unificado
 
 const app = express();
 
@@ -35,7 +36,7 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/auth", authRouter);
 
 // Custom auth (registro/login propio)
-app.use("/api/custom", customAuthRouter);
+//app.use("/api/custom", customAuthRouter);
 
 // Manejo de errores
 app.use(errorHandler);

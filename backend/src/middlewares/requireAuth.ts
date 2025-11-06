@@ -1,13 +1,22 @@
-// src/middlewares/requireAuth.ts
-/*import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/prisma.js';
 
-// Debe coincidir con el nombre que configuraste en auth.route.ts (cookies.sessionToken.name)
-const SESSION_COOKIE_NAME = '__Secure-authjs.session-token';
+/**
+ * Nombres de cookie por defecto de Auth.js:
+ * - Dev:  "authjs.session-token"
+ * - Prod: "__Secure-authjs.session-token"
+ * Leemos ambos por compatibilidad.
+ */
+const COOKIE_CANDIDATES = [
+  'authjs.session-token',
+  '__Secure-authjs.session-token',
+];
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = req.cookies?.[SESSION_COOKIE_NAME];
+    const token =
+      COOKIE_CANDIDATES.map(name => req.cookies?.[name]).find(Boolean) as string | undefined;
+
     if (!token) {
       return res.status(401).json({ error: 'No autenticado' });
     }
@@ -21,12 +30,12 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return res.status(401).json({ error: 'Sesión inválida o expirada' });
     }
 
-    // adjuntamos un "user" ligero al request (lo tipamos en types/express.d.ts)
     (req as any).user = {
       id: session.user.id,
       email: session.user.email ?? null,
       name: session.user.name ?? null,
       verified: !!session.user.verified || !!session.user.emailVerified,
+      isAdmin: !!session.user.isAdmin,
     };
 
     next();
@@ -36,11 +45,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 }
 
-/**
- * Variante opcional: exige además que el usuario esté verificado.
- */
-/*export async function requireVerified(req: Request, res: Response, next: NextFunction) {
-  // Primero exige autenticación
+export async function requireVerified(req: Request, res: Response, next: NextFunction) {
   await requireAuth(req, res, async () => {
     const user = (req as any).user as { verified?: boolean };
     if (!user?.verified) {
@@ -49,4 +54,3 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     next();
   });
 }
-*/

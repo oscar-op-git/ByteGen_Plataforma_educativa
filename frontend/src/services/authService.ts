@@ -12,7 +12,7 @@ function jsonOrThrow(res: Response) {
 }
 
 export async function register(data: { nombreCompleto: string; email: string; password: string }) {
-  const res = await fetch(`${API}/api/custom/register`, {
+  const res = await fetch(`${API}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -22,14 +22,14 @@ export async function register(data: { nombreCompleto: string; email: string; pa
 }
 
 export async function verifyEmail(token: string) {
-  const res = await fetch(`${API}/api/custom/verify?token=${encodeURIComponent(token)}`, {
+  const res = await fetch(`${API}/api/auth/verify?token=${encodeURIComponent(token)}`, {
     credentials: "include",
   });
   return jsonOrThrow(res);
 }
 
 export async function resendVerification(email: string) {
-  const res = await fetch(`${API}/api/custom/resend-verification`, {
+  const res = await fetch(`${API}/api/auth/resend-verification`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -42,6 +42,11 @@ export async function getSession() {
   const res = await fetch(`${API}/api/auth/session`, { credentials: "include" });
   if (!res.ok) return null;
   return res.json();
+}
+
+export async function getCsrf() {
+  const res = await fetch(`${API}/api/auth/csrf`, { credentials: "include" });
+  return jsonOrThrow(res);
 }
 
 export async function login(email: string, password: string) {
@@ -60,19 +65,22 @@ export async function login(email: string, password: string) {
     form.appendChild(i);
   };
 
+  const callbackUrl = window.location.origin + "/home"; // 👈 adonde quieres volver tras login
+
   add("csrfToken", csrfToken);
-  add("email", email);
+  add("email", email.trim().toLowerCase());
   add("password", password);
+  add("callbackUrl", callbackUrl);
 
   document.body.appendChild(form);
   form.submit(); // el server redirige y el navegador lo sigue
 }
 
 
-export async function getCsrf() {
+/*export async function getCsrf() {
   const res = await fetch(`${API}/api/auth/csrf`, { credentials: "include" });
   return jsonOrThrow(res);
-}
+}*/
 
 export async function signout(callbackUrl: string) {
   // Auth.js espera form POST

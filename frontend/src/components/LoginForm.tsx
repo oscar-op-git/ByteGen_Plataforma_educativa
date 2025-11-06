@@ -23,7 +23,8 @@ export default function LoginForm() {
 
     setLoading(true)
     try {
-      await loginService(email, password);
+      //await loginService(email, password);
+      await loginService(email.trim().toLowerCase(), password);
       // redirige a home o donde prefieras
       navigate('/home');
     } catch (err: any) {

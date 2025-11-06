@@ -1,4 +1,3 @@
-// backend/src/services/authService.ts
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { sendVerificationEmail } from "../utils/sendEmail.js";
@@ -12,7 +11,8 @@ interface RegisterUserData {
 }
 
 function buildVerifyUrl(rawToken: string) {
-  const url = new URL("/api/custom/verify", env.API_BASE_URL);
+  // ⇩⇩⇩ CAMBIO: ahora la verificación vive en /api/auth/verify (unificado)
+  const url = new URL("/api/auth/verify", env.API_BASE_URL);
   url.searchParams.set("token", rawToken);
   return url.toString();
 }
@@ -42,12 +42,12 @@ export const registerUserService = async (data: RegisterUserData) => {
         last_name: lastName || null,
         email: normalizedEmail,
         passwordHash,
-        verified: false
-      }
+        verified: false,
+      },
     });
 
     await tx.verificationToken.create({
-      data: { identifier: normalizedEmail, token: tokenHash, expires }
+      data: { identifier: normalizedEmail, token: tokenHash, expires },
     });
 
     return created;
@@ -64,17 +64,17 @@ export const verifyEmailService = async (rawToken: string) => {
   const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
 
   const verificationToken = await prisma.verificationToken.findFirst({
-    where: { token: tokenHash, expires: { gt: new Date() } }
+    where: { token: tokenHash, expires: { gt: new Date() } },
   });
   if (!verificationToken) throw new Error("Token inválido o expirado");
 
   const updatedUser = await prisma.user.update({
     where: { email: verificationToken.identifier },
-    data: { verified: true, emailVerified: new Date() }
+    data: { verified: true, emailVerified: new Date() },
   });
 
   await prisma.verificationToken.deleteMany({
-    where: { identifier: verificationToken.identifier }
+    where: { identifier: verificationToken.identifier },
   });
 
   return updatedUser;
@@ -93,7 +93,7 @@ export const resendVerificationService = async (email: string) => {
   const expires = new Date(Date.now() + 60 * 60 * 1000);
 
   await prisma.verificationToken.create({
-    data: { identifier: normalizedEmail, token: tokenHash, expires }
+    data: { identifier: normalizedEmail, token: tokenHash, expires },
   });
 
   const verifyUrl = buildVerifyUrl(rawToken);
