@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import type { Topic } from '../types/topic.types';
+import type { Topic, ContentBlock, TopicVariant } from '../types/topic.types';
 import TopicHeader from '../components/EncabezadoTopico';
 import ContentBlockRenderer from '../components/BloqueRenderizador';
 import CodeOutput from '../components/SalidaCodigo';
+import PdfBlock from '../components/BloqueDiapositivas';
 import LessonNavigation from '../components/BotonesNavegacion';
 import '../styles/Topico.css';
+import BloqueVideo from '../components/BloqueVideo';
 
 // Tipo para Pyodide
 interface PyodideInterface {
@@ -23,7 +25,7 @@ export default function TopicLesson() {
     id: '1',
     title: 'Introducción a Python',
     blocks: [
-      {
+      /*{
         id: '1',
         type: 'text',
         content: 'Python es un lenguaje de programación de alto nivel, interpretado y de propósito general. Es conocido por su sintaxis clara y legible, lo que lo hace ideal para principiantes.'
@@ -34,7 +36,6 @@ export default function TopicLesson() {
         content: `# Mi primer programa en Python
 print("¡Hola Mundo!")
 print("Python es genial")
-
 # Variables
 nombre = "Estudiante"
 print(f"Bienvenido, {nombre}!")`,
@@ -50,26 +51,57 @@ print(f"Bienvenido, {nombre}!")`,
         type: 'code',
         content: `# Estructuras de control
 for i in range(5):
-    print(f"Número: {i}")
-
+  print(f"Número: {i}")
 # Condicionales
 edad = 18
 if edad >= 18:
-    print("Eres mayor de edad")
+  print("Eres mayor de edad")
 else:
-    print("Eres menor de edad")`,
+  print("Eres menor de edad")`,
         language: 'python'
-      }
-    ]
+      },*/
+      {
+        id: '8',
+        type: 'slides',
+        content: `{
+        "pdfUrl": "../../public/documentos/1P_Tema 1-1.pdf",
+        "totalPages": 18,
+        "startPage": 1,
+        "audioUrl": "../../public/documentos/KAL EL NO.mp3",
+        "transcript": [
+          { "start": 0,  "end": 8,  "text": "Bienvenido/a a la lección." },
+          { "start": 8,  "end": 20, "text": "Python es legible, versátil y tiene una comunidad enorme." },
+          { "start": 20, "end": 35, "text": "Revisaremos tipos de datos básicos y cómo ejecutar código." }
+          ]
+        }`,
+      },
+      /*{
+        id: '9',
+        type: 'video',
+        content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+      },*/
+    ],
   });
 
+  // --- Determinar variante del tópico ---
+  const variant: TopicVariant =
+  topic.variant
+    ? topic.variant
+    : topic.blocks.some(b => b.type === 'slides')
+      ? 'slides'
+      : topic.blocks.some(b => b.type === 'video')
+        ? 'video'
+        : 'basic';
+  //cargar pyodide solo si es tipo basico
   const [codeOutput, setCodeOutput] = useState<string>('');
   const [currentLesson, setCurrentLesson] = useState(1);
   const [pyodide, setPyodide] = useState<PyodideInterface | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
 
-  // Cargar Pyodide al montar el componente
+  // Cargar Pyodide al montar el componente si es basicoc
   useEffect(() => {
+    if (variant !== 'basic') return;
+
     const loadPyodideInstance = async () => {
       try {
         setCodeOutput('⏳ Cargando intérprete de Python...');
@@ -131,35 +163,102 @@ sys.stdout = StringIO()
       setCurrentLesson(currentLesson + 1);
     }
   };
-
-  return (
-    <div className="topic-lesson-container">
-      <div className="topic-lesson-wrapper">
+  //renderizado basico
+  const renderBasic = (blocks: ContentBlock[]) => {
+    const onlyBasicBlocks = blocks.filter(b => b.type !== 'slides');
+    return (
+      <>
         <TopicHeader title={topic.title} lessonNumber={currentLesson} />
-
         <div className="topic-lesson-grid">
           <div className="content-blocks">
-            {topic.blocks.map((block) => (
+            {onlyBasicBlocks.map((block) => (
               <ContentBlockRenderer
                 key={block.id}
                 block={block}
-                onExecuteCode={handleExecuteCode}
+                onExecuteCode={(code) => handleExecuteCode(code)}
                 isExecuting={isExecuting}
               />
             ))}
           </div>
-
           <div className="output-sidebar">
             <CodeOutput output={codeOutput} />
           </div>
         </div>
-
         <LessonNavigation
           currentLesson={currentLesson}
           totalLessons={10}
           onPrevious={handlePrevious}
           onNext={handleNext}
         />
+      </>
+    );
+  };
+
+  //renderizado slides
+  const renderSlides = (blocks: ContentBlock[]) => {
+    const slidesBlock = blocks.find(b => b.type === 'slides');
+    interface SlidesPayload {
+      pdfUrl: string;
+      totalPages: number;
+      startPage: number;
+      audioUrl: string;
+      transcript: { start: number; end: number; text: string }[];
+    }
+
+    let payload: SlidesPayload | null = null;
+    try {
+      payload = slidesBlock ? (JSON.parse(slidesBlock.content) as SlidesPayload) : null;
+    } catch {
+      payload = null;
+    }
+
+    return (
+      <>
+        <TopicHeader title={topic.title} lessonNumber={currentLesson} />
+        {payload ? (
+          <PdfBlock content={JSON.stringify(payload)} />
+        ) : (
+          <p>No hay datos de diapositivas válidos.</p>
+        )}
+        <LessonNavigation
+          currentLesson={currentLesson}
+          totalLessons={10}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+        />
+      </>
+    );
+  };
+
+  const renderVideo = (blocks: ContentBlock[]) => {
+    const videoBlock = blocks.find((b) => b.type === 'video')
+    const urlOrId = videoBlock?.content ?? ''
+    return (
+      <>
+        <TopicHeader title={topic.title} lessonNumber={currentLesson} />
+        {urlOrId ? (
+          <BloqueVideo urlOrId={urlOrId} title={topic.title} />
+        ) : (
+          <p>No hay URL o ID de YouTube.</p>
+        )}
+        <LessonNavigation
+          currentLesson={currentLesson}
+          totalLessons={10}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+        />
+      </>
+    )
+  }
+
+  return (
+    <div className="topic-lesson-container">
+      <div className="topic-lesson-wrapper">
+        {variant === 'basic'
+          ? renderBasic(topic.blocks)
+          : variant === 'slides'
+            ? renderSlides(topic.blocks)
+            : renderVideo(topic.blocks)}
       </div>
     </div>
   );

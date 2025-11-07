@@ -26,7 +26,7 @@ export default defineConfig([
     },
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.json'], // RUTA A TU ARCHIVO tsconfig.json
+        //project: ['./tsconfig.json'], // RUTA A TU ARCHIVO tsconfig.json
         // Otros ajustes si los necesitas, como:
         ecmaFeatures: {
           jsx: true,

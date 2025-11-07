@@ -7,6 +7,10 @@ import VerifyEmail from './pages/VerifyEmail';
 import ProfileSettingsPage from './pages/ProfileSettingsPage'
 import RolesAdminPage from './pages/RolesAdminPage';
 
+import TopicLesson from './pages/Topico';
+import TopicoGoldenLayout from './pages/TopicoGoldenLayout';
+import TopicoEditorLayout from './pages/TopicoEditorLayout';
+
 function App() {
   return (
     <Router>
@@ -19,16 +23,12 @@ function App() {
         <Route path='/recover' element={<Recover />} />
         <Route path="/perfil" element={<ProfileSettingsPage />} />
         <Route path="/admin/roles" element={<RolesAdminPage />} />
+        <Route path="/topic/basic" element={<TopicLesson />} />
+        <Route path="/topic/layout" element={<TopicoGoldenLayout />} />
+        <Route path="/topic/layout/editor" element={<TopicoEditorLayout />} /> {/* modo profesor */}
       </Routes>
     </Router>
   )
 }
 
 export default App
-*/import TopicLesson from './pages/Topico';
-
-function App() {
-  return <TopicLesson />;
-}
-
-export default App;
