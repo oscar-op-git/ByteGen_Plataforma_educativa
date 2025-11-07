@@ -4,6 +4,9 @@ import {
   verifyEmailService,
   resendVerificationService,
 } from "../services/authService.js";
+import  {prisma} from '../db/prisma.js'
+import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 
 export const registerController = async (
   req: Request,
@@ -11,7 +14,8 @@ export const registerController = async (
   next: NextFunction
 ) => {
   try {
-    const { nombreCompleto, email, password } = req.body;
+    
+    const { nombreCompleto, email, password, role } = req.body ?? {};
 
     if (!nombreCompleto || !email || !password) {
       return res.status(400).json({ 
@@ -25,6 +29,12 @@ export const registerController = async (
       email, 
       password 
     });
+
+    const roleNum = Number(role ?? 2)
+    if (![1, 2, 3].includes(roleNum)) {
+      return res.status(400).json({ message: 'Rol inválido. Usa 1=admin, 2=estudiante o 3=docente' })
+    }
+
 
     return res.status(201).json({
       success: true,
