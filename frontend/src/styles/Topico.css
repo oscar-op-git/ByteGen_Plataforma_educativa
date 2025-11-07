@@ -32,3 +32,7 @@
     flex-direction: column;
     gap: 1.5rem;
   }
+.topic-golden-layout-container {
+  border-radius: 8px;
+  overflow: hidden;
+}
