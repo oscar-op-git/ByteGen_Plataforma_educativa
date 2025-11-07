@@ -1,58 +1,57 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom'
-import { getSession, login as loginService, getCsrf, signout } from "../services/authService";
+import { useNavigate } from 'react-router-dom';
+import { getSession, login as loginService, signout, loginWithGoogle } from "../services/authService";
 
 export default function LoginForm() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
-    getSession().then(setSession).catch(() => {});
+    getSession()
+      .then(setSession)
+      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!email || !password) return setError("Todos los campos son obligatorios");
-    if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres");
-
-    setLoading(true)
-    try {
-      //await loginService(email, password);
-      await loginService(email.trim().toLowerCase(), password);
-      // redirige a home o donde prefieras
-      //navigate('/home');
-    } catch (err: any) {
-      setError(err?.message ?? 'Error de inicio de sesión')
-    } finally {
-      setLoading(false)
+    if (!email || !password) {
+      return setError("Todos los campos son obligatorios");
     }
-  }
+
+    if (password.length < 8) {
+      return setError("La contraseña debe tener al menos 8 caracteres");
+    }
+
+    setLoading(true);
+    try {
+      await loginService(email.trim().toLowerCase(), password);
+      
+      // ✅ Esperar un momento y obtener la sesión
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const newSession = await getSession();
+      
+      if (newSession?.user) {
+        navigate('/home');
+      } else {
+        setError("Error al iniciar sesión. Intenta nuevamente.");
+      }
+    } catch (err: any) {
+      console.error("Error login:", err);
+      setError(err?.message ?? 'Error de inicio de sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   async function handleGoogleSignIn() {
     try {
-      const { csrfToken } = await getCsrf();
-      const callbackUrl = new URL("/", window.location.origin).toString(); // p.ej. http://localhost:5173/
-
-      // Usamos form POST hacia /api/auth/signin/google
-      const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = `${API}/api/auth/signin/google`;
-      form.style.display = "none";
-
-      form.append(
-        Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
-        Object.assign(document.createElement("input"), { name: "callbackUrl", value: callbackUrl })
-      );
-
-      document.body.appendChild(form);
-      form.submit();
+      await loginWithGoogle();
     } catch (error) {
       console.error("Error durante el inicio de sesión con Google:", error);
       alert("Hubo un problema al iniciar sesión. Intenta de nuevo.");
@@ -60,8 +59,15 @@ export default function LoginForm() {
   }
 
   async function handleSignOut() {
-    await signout(`${window.location.origin}/`);
+    await signout(`${window.location.origin}/login`);
   }
+
+  // Si ya hay sesión, redirigir
+  useEffect(() => {
+    if (session?.user) {
+      navigate('/home');
+    }
+  }, [session, navigate]);
 
   return (
     <form onSubmit={handleSubmit} className="login-form">

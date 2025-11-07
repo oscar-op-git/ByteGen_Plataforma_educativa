@@ -1,4 +1,3 @@
-// frontend/src/services/authService.ts
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 function jsonOrThrow(res: Response) {
@@ -11,7 +10,14 @@ function jsonOrThrow(res: Response) {
   });
 }
 
-export async function register(data: { nombreCompleto: string; email: string; password: string }) {
+// ============================================
+// REGISTRO
+// ============================================
+export async function register(data: { 
+  nombreCompleto: string; 
+  email: string; 
+  password: string 
+}) {
   const res = await fetch(`${API}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -21,6 +27,9 @@ export async function register(data: { nombreCompleto: string; email: string; pa
   return jsonOrThrow(res);
 }
 
+// ============================================
+// VERIFICAR EMAIL
+// ============================================
 export async function verifyEmail(token: string) {
   const res = await fetch(`${API}/api/auth/verify?token=${encodeURIComponent(token)}`, {
     credentials: "include",
@@ -28,6 +37,9 @@ export async function verifyEmail(token: string) {
   return jsonOrThrow(res);
 }
 
+// ============================================
+// REENVIAR VERIFICACIÓN
+// ============================================
 export async function resendVerification(email: string) {
   const res = await fetch(`${API}/api/auth/resend-verification`, {
     method: "POST",
@@ -38,62 +50,92 @@ export async function resendVerification(email: string) {
   return jsonOrThrow(res);
 }
 
-export async function getSession() {
-  const res = await fetch(`${API}/api/auth/session`, { credentials: "include" });
-  if (!res.ok) return null;
-  return res.json();
-}
-
-export async function getCsrf() {
-  const res = await fetch(`${API}/api/auth/csrf`, { credentials: "include" });
-  return jsonOrThrow(res);
-}
-
+// ============================================
+// LOGIN (MÉTODO SIMPLIFICADO - RECOMENDADO)
+// ============================================
 export async function login(email: string, password: string) {
-  const { csrfToken } = await getCsrf();
-
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = `${API}/api/auth/callback/credentials`;
-  form.style.display = "none";
-
-  const add = (name: string, value: string) => {
-    const i = document.createElement("input");
-    i.type = "hidden";
-    i.name = name;
-    i.value = value;
-    form.appendChild(i);
-  };
-
-  const callbackUrl = window.location.origin + "/home"; // 👈 adonde quieres volver tras login
-
-  add("csrfToken", csrfToken);
-  add("email", email.trim().toLowerCase());
-  add("password", password);
-  add("callbackUrl", callbackUrl);
-
-  document.body.appendChild(form);
-  form.submit(); // el server redirige y el navegador lo sigue
+  const res = await fetch(`${API}/api/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ 
+      email: email.trim().toLowerCase(), 
+      password 
+    }),
+  });
+  return jsonOrThrow(res);
 }
 
+// ============================================
+// OBTENER SESIÓN ACTUAL
+// ============================================
+export async function getSession() {
+  const res = await fetch(`${API}/api/auth/session`, { 
+    credentials: "include" 
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.user ? data : null;
+}
 
-/*export async function getCsrf() {
-  const res = await fetch(`${API}/api/auth/csrf`, { credentials: "include" });
+// ============================================
+// CSRF TOKEN (para Auth.js forms)
+// ============================================
+export async function getCsrf() {
+  const res = await fetch(`${API}/api/auth/csrf`, { 
+    credentials: "include" 
+  });
   return jsonOrThrow(res);
-}*/
+}
 
-export async function signout(callbackUrl: string) {
-  // Auth.js espera form POST
+// ============================================
+// SIGNOUT
+// ============================================
+export async function signout(callbackUrl: string = "/login") {
+  const { csrfToken } = await getCsrf();
+  
   const form = document.createElement("form");
   form.method = "POST";
   form.action = `${API}/api/auth/signout`;
   form.style.display = "none";
 
+  const addInput = (name: string, value: string) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  };
+
+  addInput("csrfToken", csrfToken);
+  addInput("callbackUrl", callbackUrl);
+
+  document.body.appendChild(form);
+  form.submit();
+}
+
+// ============================================
+// LOGIN CON GOOGLE (OAuth)
+// ============================================
+export async function loginWithGoogle() {
   const { csrfToken } = await getCsrf();
-  form.append(
-    Object.assign(document.createElement("input"), { name: "csrfToken", value: csrfToken }),
-    Object.assign(document.createElement("input"), { name: "callbackUrl", value: callbackUrl })
-  );
+  const callbackUrl = `${window.location.origin}/home`;
+
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = `${API}/api/auth/signin/google`;
+  form.style.display = "none";
+
+  const addInput = (name: string, value: string) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  };
+
+  addInput("csrfToken", csrfToken);
+  addInput("callbackUrl", callbackUrl);
 
   document.body.appendChild(form);
   form.submit();

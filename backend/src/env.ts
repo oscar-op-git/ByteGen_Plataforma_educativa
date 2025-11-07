@@ -1,18 +1,3 @@
-/*import "dotenv/config";
-
-const { AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
-
-if (!AUTH_SECRET) throw new Error("Missing AUTH_SECRET");
-if (!GOOGLE_CLIENT_ID)  throw new Error("Missing GOOGLE_CLIENT_ID");
-if (!GOOGLE_CLIENT_SECRET) throw new Error("Missing GOOGLE_CLIENT_SECRET");
-
-export const env = {
-  AUTH_SECRET,
-  GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET,
-} as const;*/
- // backend/src/env.ts
-// src/env.ts
 import "dotenv/config";
 
 const must = (k: string) => {
@@ -43,9 +28,9 @@ export const env = {
   
   // Auth
   AUTH_SECRET: must("AUTH_SECRET"),
-  //JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET ?? "dev_access_secret_change_me",
-  //ACCESS_TOKEN_TTL: process.env.ACCESS_TOKEN_TTL ?? "15m",
-  //REFRESH_TTL_DAYS: num("REFRESH_TTL_DAYS", 7),
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET ?? "dev_access_secret_change_me",
+  ACCESS_TOKEN_TTL: process.env.ACCESS_TOKEN_TTL ?? "15m",
+  REFRESH_TTL_DAYS: num("REFRESH_TTL_DAYS", 7),
   
   // OAuth
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,

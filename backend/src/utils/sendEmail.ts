@@ -1,4 +1,3 @@
-// backend/src/utils/sendEmail.ts
 import nodemailer, { Transporter } from "nodemailer";
 import { env } from "../env.js";
 
