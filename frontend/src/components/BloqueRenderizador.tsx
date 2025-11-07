@@ -2,6 +2,7 @@ import type { ContentBlock } from '../types/topic.types';
 import TextBlock from './BloqueTexto';
 import CodeBlock from './BloqueCodigo';
 import ImageBlock from './BloqueImagen';
+import PdfBlock from './BloqueDiapositivas';
 interface ContentBlockRendererProps {
   block: ContentBlock;
   onExecuteCode: (code: string, blockId: string) => void;
@@ -24,6 +25,8 @@ export default function ContentBlockRenderer({ block, onExecuteCode, isExecuting
       );
     case 'image':
       return <ImageBlock content={block.content} />;
+    case 'slides':
+      return <PdfBlock content={block.content} />;
     default:
       return null;
   }
