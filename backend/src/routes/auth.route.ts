@@ -21,17 +21,12 @@ import {
 
 export const authRouter = Router();
 
-// ============================================
-// ENDPOINTS CUSTOM (registro/verificación)
-// IMPORTANTE: Estos deben ir ANTES de montar Auth.js
-// ============================================
+// edpoints personalizados
 authRouter.post("/register", registerLimiter, registerController);
 authRouter.get("/verify", verifyEmailController);
 authRouter.post("/resend-verification", resendVerificationLimiter, resendVerificationController);
 
-// ============================================
-// AUTH.JS CONFIGURATION
-// ============================================
+// configuración de Auth.js
 const handler = ExpressAuth({
   secret: env.AUTH_SECRET,
   trustHost: true,
@@ -47,7 +42,7 @@ const handler = ExpressAuth({
     Google({
       clientId: env.GOOGLE_CLIENT_ID!,
       clientSecret: env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true, // ✅ Vinculación automática de cuentas
+      allowDangerousEmailAccountLinking: true, // Permitir vinculación de cuentas con el mismo email
     }),
 
     Credentials({
@@ -77,7 +72,7 @@ const handler = ExpressAuth({
 
         if (!user || !user.passwordHash) return null;
 
-        // ✅ Verificar que el usuario esté verificado
+        // Verificar si el email está confirmado
         const isVerified = !!user.verified || !!user.emailVerified;
         if (!isVerified) {
           throw new Error("Debes verificar tu correo antes de iniciar sesión");
@@ -97,15 +92,14 @@ const handler = ExpressAuth({
   ],
 
   pages: {
-    signIn: `/login`,
-    error: `/login`,
-    verifyRequest: `/check-email`,
-    newUser: `/home`,
+    signIn: `${env.FRONTEND_ORIGIN}/login`,
+    error: `${env.FRONTEND_ORIGIN}/login`,
+    verifyRequest: `${env.FRONTEND_ORIGIN}/check-email`,
+    newUser: `${env.FRONTEND_ORIGIN}/home`,
   },
 
   callbacks: {
     async signIn({ user, account }) {
-      // ✅ Usuarios de OAuth se marcan como verificados automáticamente
       if (account?.provider === "google") {
         await prisma.user.update({
           where: { id: user.id },
@@ -118,6 +112,26 @@ const handler = ExpressAuth({
       return true;
     },
 
+  async redirect({ url, baseUrl }) {
+    if (url.startsWith("/")) {
+      return `${baseUrl}${url}`;
+    }
+    try {
+      const parsed = new URL(url);
+      const frontendOrigin = env.FRONTEND_ORIGIN;
+
+      if (parsed.origin === baseUrl) {
+        return url;
+      }
+
+      if (parsed.origin === frontendOrigin) {
+        return url;
+      }
+    } catch (e) {
+      console.error('[auth redirect] URL inválida:', url, e);
+    }
+    return `${env.FRONTEND_ORIGIN}/login`;
+  },
     async session({ session, user }) {
       if (session.user && user) {
         session.user.id = user.id;
@@ -148,31 +162,8 @@ const handler = ExpressAuth({
   },
 });
 
-// Rate limit para endpoints de Auth.js
+// Limitar intentos de login
 authRouter.use("/signin", loginLimiter);
 authRouter.use("/callback/credentials", loginLimiter);
 
-// Mount Auth.js handlers
 authRouter.use(handler);
-
-// ============================================
-// LOG DE RUTAS REGISTRADAS (solo en desarrollo)
-// ============================================
-if (env.NODE_ENV === 'development') {
-  console.log('\n🔐 [Auth Routes] Registered:');
-  console.log('   GET  /api/auth/signin');
-  console.log('   POST /api/auth/signin');
-  console.log('   GET  /api/auth/callback/:provider');
-  console.log('   POST /api/auth/callback/:provider');
-  console.log('   GET  /api/auth/signout');
-  console.log('   POST /api/auth/signout');
-  console.log('   GET  /api/auth/session');
-  console.log('   GET  /api/auth/csrf');
-  console.log('   GET  /api/auth/providers');
-  console.log('\n📝 [Custom Routes] Registered:');
-  console.log('   POST /api/auth/register');
-  console.log('   GET  /api/auth/verify');
-  console.log('   POST /api/auth/resend-verification');
-  console.log('   POST /api/auth/login');
-  console.log('');
-}
