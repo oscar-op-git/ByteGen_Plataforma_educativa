@@ -13,6 +13,7 @@ model community {
   id_user_user   String
   group          group  @relation(fields: [id_group_group], references: [id_group], onDelete: Cascade, map: "group_fk")
   user           User   @relation(fields: [id_user_user], references: [id], onDelete: Cascade, map: "user_fk")
+
   @@id([id_group_group, id_user_user], map: "community_pk")
 }
 
@@ -140,11 +141,11 @@ model User {
   verified      Boolean?    @default(false)
   isAdmin       Boolean     @default(false)
   id_role_role  Int?
-  role          role?       @relation(fields: [id_role_role], references: [id_role], map: "role_fk")
   accounts      Account[]
   sessions      Session[]
   community     community[]
   respuesta     respuesta[]
+  role          role?       @relation(fields: [id_role_role], references: [id_role], map: "role_fk")
 
   @@map("user")
 }
