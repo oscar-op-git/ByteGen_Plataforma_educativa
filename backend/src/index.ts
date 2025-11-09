@@ -10,6 +10,8 @@ import { errorHandler } from "./middlewares/error.js";
 import { authRouter } from "./routes/auth.route.js";
 import { prisma } from "./utils/prisma.js";
 import { loginLimiter } from "./middlewares/rateLimit.js";
+import userRouter from "./routes/user.route.js";
+import roleRouter from "./routes/role.route.js";
 
 const app = express();
 
@@ -25,23 +27,21 @@ app.use(
 );
 
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(morgan("dev"));
+
+// Solo logs en desarrollo
+if (env.NODE_ENV === "development") {
+  app.use(morgan("tiny")); 
+}
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// Health check
 app.get("/health", (_req, res) => {
-  res.json({ 
-    ok: true, 
-    timestamp: new Date().toISOString(),
-    environment: env.NODE_ENV
-  });
+  res.json({ ok: true });
 });
 
-// ============================================
-// LOGIN CUSTOM (fuera de /api/auth para evitar conflicto con Auth.js)
-// ============================================
+// Login optimizado
 app.post("/api/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -55,6 +55,7 @@ app.post("/api/login", loginLimiter, async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
+    // Optimización: Una sola query con select específico
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       select: {
@@ -64,6 +65,14 @@ app.post("/api/login", loginLimiter, async (req, res) => {
         passwordHash: true,
         verified: true,
         emailVerified: true,
+        id_role_role: true,
+        isAdmin: true,
+        role: {
+          select: {
+            id_role: true,
+            description: true,
+          },
+        },
       },
     });
 
@@ -90,9 +99,8 @@ app.post("/api/login", loginLimiter, async (req, res) => {
       });
     }
 
-    // Crear sesión manualmente
     const sessionToken = crypto.randomUUID();
-    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 días
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     await prisma.session.create({
       data: {
@@ -102,7 +110,6 @@ app.post("/api/login", loginLimiter, async (req, res) => {
       },
     });
 
-    // Establecer cookie
     res.cookie("authjs.session-token", sessionToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
@@ -113,15 +120,17 @@ app.post("/api/login", loginLimiter, async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Inicio de sesión exitoso",
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
+        isAdmin: user.isAdmin,
+        roleId: user.id_role_role,
+        roleName: user.role?.description ?? null,
       },
     });
   } catch (error) {
-    console.error("Error en login:", error);
+    console.error("❌ Login error:", error);
     return res.status(500).json({
       error: "Error interno",
       message: "Ocurrió un error al iniciar sesión",
@@ -129,51 +138,35 @@ app.post("/api/login", loginLimiter, async (req, res) => {
   }
 });
 
-// Auth routes (Auth.js + custom auth endpoints)
 app.use("/api/auth", authRouter);
+app.use("/api/users", userRouter);
+app.use("/api/roles", roleRouter);
 
-// Root endpoint
 app.get("/", (_req, res) => {
-  res.json({ 
-    message: "EduMaster API v1.0",
-    docs: "/api/docs" 
-  });
+  res.json({ message: "EduMaster API" });
 });
 
-// Error handler (debe ir al final)
 app.use(errorHandler);
 
-// 404 handler
 app.use((_req, res) => {
-  res.status(404).json({ 
-    error: 'Ruta no encontrada',
-    message: 'El endpoint solicitado no existe'
+  res.status(404).json({
+    error: "Ruta no encontrada",
   });
 });
 
 const PORT = env.PORT;
 
 app.listen(PORT, () => {
-  console.log(`
-╔═══════════════════════════════════════╗
-║   🚀 EduMaster API Server Running    ║
-╠═══════════════════════════════════════╣
-║  Environment: ${env.NODE_ENV.padEnd(23)} ║
-║  Port: ${PORT.toString().padEnd(30)} ║
-║  URL: http://localhost:${PORT.toString().padEnd(17)} ║
-╚═══════════════════════════════════════╝
-  `);
+  // Log simplificado
+  console.log(`🚀 Server: http://localhost:${PORT}`);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, closing server...');
+process.on("SIGTERM", async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
 
-process.on('SIGINT', async () => {
-  console.log('\nSIGINT received, closing server...');
+process.on("SIGINT", async () => {
   await prisma.$disconnect();
   process.exit(0);
 });

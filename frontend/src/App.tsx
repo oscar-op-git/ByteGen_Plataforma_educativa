@@ -42,7 +42,7 @@ function App() {
         <Route
           path="/admin/roles"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin>
               <RolesAdminPage />
             </ProtectedRoute>
           }

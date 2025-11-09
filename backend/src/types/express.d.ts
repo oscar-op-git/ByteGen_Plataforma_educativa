@@ -7,6 +7,8 @@ declare global {
         name: string | null;
         verified: boolean;
         isAdmin: boolean;
+        roleId: number | null;     
+        roleName: string | null;    
       };
     }
   }

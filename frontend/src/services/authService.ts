@@ -1,5 +1,9 @@
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
+//Caché de sesión en memoria
+let sessionCache: { user: any; timestamp: number } | null = null;
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutos
+
 function jsonOrThrow(res: Response) {
   return res.json().then((data) => {
     if (!res.ok) {
@@ -10,9 +14,6 @@ function jsonOrThrow(res: Response) {
   });
 }
 
-// ============================================
-// REGISTRO
-// ============================================
 export async function register(data: { 
   nombreCompleto: string; 
   email: string; 
@@ -27,9 +28,6 @@ export async function register(data: {
   return jsonOrThrow(res);
 }
 
-// ============================================
-// VERIFICAR EMAIL
-// ============================================
 export async function verifyEmail(token: string) {
   const res = await fetch(`${API}/api/auth/verify?token=${encodeURIComponent(token)}`, {
     credentials: "include",
@@ -37,9 +35,6 @@ export async function verifyEmail(token: string) {
   return jsonOrThrow(res);
 }
 
-// ============================================
-// REENVIAR VERIFICACIÓN
-// ============================================
 export async function resendVerification(email: string) {
   const res = await fetch(`${API}/api/auth/resend-verification`, {
     method: "POST",
@@ -50,9 +45,6 @@ export async function resendVerification(email: string) {
   return jsonOrThrow(res);
 }
 
-// ============================================
-// LOGIN (MÉTODO SIMPLIFICADO - RECOMENDADO)
-// ============================================
 export async function login(email: string, password: string) {
   const res = await fetch(`${API}/api/login`, {
     method: "POST",
@@ -63,24 +55,52 @@ export async function login(email: string, password: string) {
       password 
     }),
   });
-  return jsonOrThrow(res);
+  const data = await jsonOrThrow(res);
+  
+  // Guardar en caché después del login
+  if (data.user) {
+    sessionCache = {
+      user: data.user,
+      timestamp: Date.now()
+    };
+  }
+  
+  return data;
 }
 
-// ============================================
-// OBTENER SESIÓN ACTUAL
-// ============================================
-export async function getSession() {
+export async function getSession(forceRefresh = false) {
+  // Retornar caché si es válido
+  if (!forceRefresh && sessionCache) {
+    const age = Date.now() - sessionCache.timestamp;
+    if (age < CACHE_TTL) {
+      return { user: sessionCache.user };
+    }
+  }
+
   const res = await fetch(`${API}/api/auth/session`, { 
     credentials: "include" 
   });
-  if (!res.ok) return null;
+  
+  if (!res.ok) {
+    sessionCache = null;
+    return null;
+  }
+  
   const data = await res.json();
+  
+  // Actualizar caché
+  if (data?.user) {
+    sessionCache = {
+      user: data.user,
+      timestamp: Date.now()
+    };
+  } else {
+    sessionCache = null;
+  }
+  
   return data?.user ? data : null;
 }
 
-// ============================================
-// CSRF TOKEN (para Auth.js forms)
-// ============================================
 export async function getCsrf() {
   const res = await fetch(`${API}/api/auth/csrf`, { 
     credentials: "include" 
@@ -88,55 +108,67 @@ export async function getCsrf() {
   return jsonOrThrow(res);
 }
 
-// ============================================
-// SIGNOUT
-// ============================================
-export async function signout(callbackUrl: string = "/login") {
-  const { csrfToken } = await getCsrf();
+export async function signout() {
+  // Limpiar caché antes del signout
+  sessionCache = null;
   
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = `${API}/api/auth/signout`;
-  form.style.display = "none";
+  try {
+    const { csrfToken } = await getCsrf();
+    
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = `${API}/api/auth/signout`;
+    form.style.display = "none";
 
-  const addInput = (name: string, value: string) => {
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = name;
-    input.value = value;
-    form.appendChild(input);
-  };
+    const addInput = (name: string, value: string) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
 
-  addInput("csrfToken", csrfToken);
-  addInput("callbackUrl", callbackUrl);
+    addInput("csrfToken", csrfToken);
+    addInput("callbackUrl", `${window.location.origin}/login`);
 
-  document.body.appendChild(form);
-  form.submit();
+    document.body.appendChild(form);
+    form.submit();
+  } catch (error) {
+    console.error("Error en signout:", error);
+    window.location.href = "/login";
+  }
 }
 
-// ============================================
-// LOGIN CON GOOGLE (OAuth)
-// ============================================
 export async function loginWithGoogle() {
-  const { csrfToken } = await getCsrf();
-  const callbackUrl = `${window.location.origin}/home`;
+  try {
+    const { csrfToken } = await getCsrf();
+    const callbackUrl = `${window.location.origin}/home`;
 
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = `${API}/api/auth/signin/google`;
-  form.style.display = "none";
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = `${API}/api/auth/signin/google`;
+    form.style.display = "none";
 
-  const addInput = (name: string, value: string) => {
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = name;
-    input.value = value;
-    form.appendChild(input);
-  };
+    const addInput = (name: string, value: string) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
 
-  addInput("csrfToken", csrfToken);
-  addInput("callbackUrl", callbackUrl);
+    addInput("csrfToken", csrfToken);
+    addInput("callbackUrl", callbackUrl);
 
-  document.body.appendChild(form);
-  form.submit();
+    document.body.appendChild(form);
+    form.submit();
+  } catch (error) {
+    console.error("Error en loginWithGoogle:", error);
+    throw error;
+  }
+}
+
+// Función para invalidar caché manualmente
+export function clearSessionCache() {
+  sessionCache = null;
 }

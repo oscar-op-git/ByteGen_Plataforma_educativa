@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HomeBox from '../components/HomeBox';
 import CustomButton from '../components/CustomBotton';
@@ -17,32 +17,41 @@ type User = {
   email: string;
   verified: boolean;
   isAdmin: boolean;
+  roleId: number | null;
+  roleName: string | null;
 };
 
-type Course = { id: string; title: string; teacher: string; hidden?: boolean };
+type Course = { 
+  id: string; 
+  title: string; 
+  teacher: string; 
+  hidden?: boolean 
+};
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-
-  const [user, setUser] = React.useState<User | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [roleView, setRoleView] = React.useState<1 | 2 | 3>(2); // Default estudiante
-  const [userMenuOpen, setUserMenuOpen] = React.useState(false);
-  const [courses, setCourses] = React.useState<Course[]>([
-    { id: 'c1', title: 'Introduccion a python', teacher: 'Prof. Ramírez' },
-    { id: 'c2', title: 'Primeros pasos de python', teacher: 'Prof. Salinas' },
-    { id: 'c3', title: 'Introduccion a python', teacher: 'Prof. Vargas' },
-    { id: 'c4', title: 'Nivel basico de python', teacher: 'Prof. Quispe', hidden: true },
-    { id: 'c5', title: 'Introduccion a python', teacher: 'Prof. Cruz' },
-    { id: 'c6', title: 'Curso basico de python', teacher: 'Prof. Lara' },
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [roleView, setRoleView] = useState<1 | 2 | 3>(2);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([
+    { id: 'c1', title: 'Introducción a Python', teacher: 'Prof. Ramírez' },
+    { id: 'c2', title: 'Primeros pasos de Python', teacher: 'Prof. Salinas' },
+    { id: 'c3', title: 'JavaScript Básico', teacher: 'Prof. Vargas' },
+    { id: 'c4', title: 'Nivel básico de Python', teacher: 'Prof. Quispe', hidden: true },
+    { id: 'c5', title: 'React Avanzado', teacher: 'Prof. Cruz' },
+    { id: 'c6', title: 'Curso básico de Python', teacher: 'Prof. Lara' },
   ]);
-  const [showHidden, setShowHidden] = React.useState(false);
-  const [joinOpen, setJoinOpen] = React.useState(false);
+  const [showHidden, setShowHidden] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
 
-  // ✅ Obtener sesión al cargar
   useEffect(() => {
+    let mounted = true;
+
     getSession()
       .then((session) => {
+        if (!mounted) return;
+        
         if (session?.user) {
           setUser({
             id: session.user.id,
@@ -50,23 +59,32 @@ const Home: React.FC = () => {
             email: session.user.email,
             verified: session.user.verified ?? true,
             isAdmin: session.user.isAdmin ?? false,
+            roleId: session.user.roleId ?? null,
+            roleName: session.user.roleName ?? null,
           });
           
-          // Determinar rol (esto debería venir de la BD en id_role_role)
-          // Por ahora, asumimos: isAdmin=true → rol 1, sino → rol 2
+          // Establecer vista de rol
           setRoleView(session.user.isAdmin ? 1 : 2);
         } else {
           navigate('/login');
         }
       })
-      .catch(() => navigate('/login'))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (mounted) navigate('/login');
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, [navigate]);
 
-  const onUserMenuAction = async (a: 'perfil' | 'config' | 'ayuda' | 'salir') => {
+  const onUserMenuAction = useCallback(async (a: 'perfil' | 'config' | 'ayuda' | 'salir') => {
     if (a === 'salir') {
       try {
-        await signout(`${window.location.origin}/login`);
+        await signout();
       } catch (error) {
         console.error('Error al cerrar sesión:', error);
         toast.error('No se pudo cerrar sesión');
@@ -76,66 +94,25 @@ const Home: React.FC = () => {
     if (a === 'perfil') return navigate('/perfil');
     if (a === 'config') return toast('Configuración (pendiente)');
     if (a === 'ayuda') return toast('Ayuda (pendiente)');
-  };
+  }, [navigate]);
 
-  const onEnterCourse = (id: string) => toast(`Entrar al curso ${id} (pendiente)`);
-  
-  const onToggleHidden = (id: string) => {
-    setCourses((prev) => prev.map((c) => (c.id === id ? { ...c, hidden: !c.hidden } : c)));
-  };
-  
-  const onJoin = async (code: string) => {
-    setJoinOpen(false);
-    toast.success(`(fake) Te uniste con código ${code}`);
-  };
+  const onEnterCourse = useCallback((id: string) => {
+    toast(`Entrando al curso ${id}`);
+    //navegar a la página del curso
+  }, []);
 
-  const renderRoleArea = () => (
-    <div className="home-role-wrap">
-      <RoleBadge
-        role={roleView}
-        onChangeRoleView={setRoleView}
-        allowAdminSwitch={false}
-        isAdminNow={roleView === 1}
-      />
-    </div>
-  );
-
-  const renderActionsByRole = () => {
-    if (roleView === 2) {
-      // Estudiante
-      return (
-        <>
-          <div className="home-actions" style={{ justifyContent: 'flex-end' }}>
-            <CustomButton label="Unirse a clase" onClick={() => setJoinOpen(true)} fullWidth={false} />
-          </div>
-          <CoursesGrid
-            courses={courses}
-            showHidden={showHidden}
-            onToggleShowHidden={() => setShowHidden((v) => !v)}
-            onEnter={onEnterCourse}
-            onToggleHidden={onToggleHidden}
-          />
-        </>
-      );
-    }
-    if (roleView === 3) {
-      // Docente
-      return (
-        <div className="home-actions">
-          <CustomButton label="Editar curso" onClick={() => toast('Editar curso (pendiente)')} fullWidth={false} />
-          <CustomButton label="Unirse a clase" onClick={() => setJoinOpen(true)} fullWidth={false} />
-        </div>
-      );
-    }
-    // Admin
-    return (
-      <div className="home-actions">
-        <CustomButton label="Editar curso" onClick={() => toast('Editar curso (pendiente)')} fullWidth={false} />
-        <CustomButton label="Editar curso base" onClick={() => toast('Editar curso base (pendiente)')} fullWidth={false} />
-        <CustomButton label="Unirse a clase" onClick={() => setJoinOpen(true)} fullWidth={false} />
-      </div>
+  const onToggleHidden = useCallback((id: string) => {
+    setCourses((prev) => 
+      prev.map((c) => (c.id === id ? { ...c, hidden: !c.hidden } : c))
     );
-  };
+    toast.success('Estado del curso actualizado');
+  }, []);
+
+  const onJoin = useCallback(async (code: string) => {
+    setJoinOpen(false);
+    toast.success(`Te uniste con el código: ${code}`);
+    // TODO: Implementar lógica real
+  }, []);
 
   if (loading) {
     return (
@@ -145,9 +122,7 @@ const Home: React.FC = () => {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <>
@@ -162,19 +137,52 @@ const Home: React.FC = () => {
         onCloseUserMenu={() => setUserMenuOpen(false)}
         userMenuOpen={userMenuOpen}
         onUserMenuAction={onUserMenuAction}
-        isAdmin={roleView === 1}
+        isAdmin={user.isAdmin}
         onAssignRoles={() => navigate('/admin/roles')}
       />
 
       <div className="home-page">
         <HomeBox className="home-box">
           <h1 className="project-name">Bienvenido, {user.name}</h1>
-          {renderRoleArea()}
-          <div style={{ marginTop: 16 }}>{renderActionsByRole()}</div>
+          
+          {/* Badge de rol */}
+          <div className="home-role-wrap">
+            <RoleBadge
+              role={roleView}
+              onChangeRoleView={setRoleView}
+              allowAdminSwitch={false}
+              isAdminNow={roleView === 1}
+            />
+          </div>
+
+          {/* Botón de unirse a clase */}
+          <div style={{ marginTop: 16 }}>
+            <CustomButton 
+              label="Unirse a clase" 
+              onClick={() => setJoinOpen(true)} 
+              fullWidth={false} 
+            />
+          </div>
+
+          {/* Grid de cursos */}
+          <div style={{ marginTop: 24 }}>
+            <CoursesGrid
+              courses={courses}
+              showHidden={showHidden}
+              onToggleShowHidden={() => setShowHidden((v) => !v)}
+              onEnter={onEnterCourse}
+              onToggleHidden={onToggleHidden}
+            />
+          </div>
         </HomeBox>
       </div>
 
-      <JoinClassModal open={joinOpen} onClose={() => setJoinOpen(false)} onJoin={onJoin} />
+      <JoinClassModal 
+        open={joinOpen} 
+        onClose={() => setJoinOpen(false)} 
+        onJoin={onJoin} 
+      />
+      
       <FooterHome />
     </>
   );

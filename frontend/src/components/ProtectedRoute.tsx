@@ -2,15 +2,33 @@ import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { getSession } from '../services/authService';
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+type ProtectedRouteProps = {
+  children: React.ReactNode;
+  requireAdmin?: boolean; 
+};
+
+export function ProtectedRoute({ children, requireAdmin }: ProtectedRouteProps) {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
+    // se obtiene la sesión del usuario con cache
     getSession()
-      .then(setSession)
-      .catch(() => setSession(null))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (mounted) setSession(data);
+      })
+      .catch(() => {
+        if (mounted) setSession(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   if (loading) {
@@ -23,6 +41,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!session?.user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (requireAdmin && !session.user.isAdmin) {
+    return <Navigate to="/home" replace />;
   }
 
   return <>{children}</>;
