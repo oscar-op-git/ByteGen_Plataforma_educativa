@@ -1,15 +1,9 @@
-// src/modules/groups/group.service.ts
 import { PrismaClient } from '@prisma/client';
-import { OrderedTopicsResponse, TopicDto, MultimediaDto } from './types.js';
-
 const prisma = new PrismaClient();
 
 export class GroupService {
-  /**
-   * Devuelve tópicos ordenados por orden.puesto para un group.
-   * Incluye multimedia asociada (a través de multimedia_topico) y el tipo de multimedia.
-   */
-  static async getOrderedTopicsByGroup(groupId: number): Promise<OrderedTopicsResponse | null> {
+  static async getOrderedTopicsByGroup(groupId: number) {
+    // Traer el grupo con sus tópicos ordenados
     const group = await prisma.group.findUnique({
       where: { id_group: groupId },
       include: {
@@ -24,6 +18,7 @@ export class GroupService {
                     tipo_multimedia: true,
                   },
                 },
+                comment: true,
               },
             },
           },
@@ -31,34 +26,36 @@ export class GroupService {
       },
     });
 
-    if (!group) return null;
+    if (!group) {
+      return null;
+    }
 
-    const topics: TopicDto[] = group.orden
-      // opcional: filtrar orden que no tengan topico
-      .filter((o) => o.topico !== null)
-      .map((o) => {
-        const t = o.topico!;
-        const multimedia: MultimediaDto[] = (t.multimedia_topico ?? []).map((mt) => ({
-          id_multimedia: mt.id_multimedia_multimedia,
-          url_view: mt.multimedia?.url_view ?? null,
-          url_original: mt.multimedia?.url_original ?? null,
-          tipo: mt.tipo_topico?.description ?? null,
-        }));
-
-        const topicDto: TopicDto = {
-          id_topico: t.id_topico,
-          titulo: t.titulo ?? null,
-          description: t.description ?? null,
-          puesto: o.puesto ?? null,
-          multimedia,
-        };
-
-        return topicDto;
-      });
+    // Mapear a JSON con la forma deseada
+    const topicsJson = group.orden.map(o => ({
+      id: o.topico?.id_topico,
+      titulo: o.topico?.titulo,
+      description: o.topico?.description,
+      puesto: o.puesto,
+      multimedia: o.topico?.multimedia_topico.map(mt => ({
+        id: mt.multimedia.id_multimedia,
+        url_view: mt.multimedia.url_view,
+        url_original: mt.multimedia.url_original,
+        tipo: mt.tipo_multimedia.description,
+      })) || [],
+      comment: o.topico?.comment
+        ? {
+            id: o.topico.comment.id,
+            author_name: o.topico.comment.author_name,
+            content: o.topico.comment.content,
+            created_at: o.topico.comment.created_at,
+          }
+        : null,
+    }));
 
     return {
       id_group: group.id_group,
-      topics,
+      id_course: group.id_course_course,
+      topics: topicsJson,
     };
   }
 }
