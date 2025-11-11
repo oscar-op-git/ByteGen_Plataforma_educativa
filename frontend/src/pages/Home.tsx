@@ -98,7 +98,7 @@ const Home: React.FC = () => {
 
   const onEnterCourse = useCallback((id: string) => {
     toast(`Entrando al curso ${id}`);
-    //navegar a la página del curso
+    navigate("/topic/layout");
   }, []);
 
   const onToggleHidden = useCallback((id: string) => {
