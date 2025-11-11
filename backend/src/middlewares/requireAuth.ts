@@ -1,52 +1,130 @@
-// src/middlewares/requireAuth.ts
-/*import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/prisma.js';
 
-// Debe coincidir con el nombre que configuraste en auth.route.ts (cookies.sessionToken.name)
-const SESSION_COOKIE_NAME = '__Secure-authjs.session-token';
+const COOKIE_CANDIDATES = [
+  'authjs.session-token',
+  '__Secure-authjs.session-token',
+];
 
-export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+// Caché simple en memoria (solo para desarrollo)
+const sessionCache = new Map<string, { user: any; expires: Date }>();
+
+export async function requireAuth(
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+) {
   try {
-    const token = req.cookies?.[SESSION_COOKIE_NAME];
+    const token = COOKIE_CANDIDATES
+      .map(name => req.cookies?.[name])
+      .find(Boolean) as string | undefined;
+
     if (!token) {
-      return res.status(401).json({ error: 'No autenticado' });
+      return res.status(401).json({ 
+        error: 'No autenticado',
+      });
     }
 
+    // Verificar caché primero (evita query en cada request)
+    const cached = sessionCache.get(token);
+    if (cached && cached.expires > new Date()) {
+      req.user = cached.user;
+      return next();
+    }
+
+    // Query optimizada: solo campos necesarios
     const session = await prisma.session.findUnique({
       where: { sessionToken: token },
-      include: { user: true },
+      select: {
+        expires: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            verified: true,
+            emailVerified: true,
+            isAdmin: true,
+            id_role_role: true,
+            role: {
+              select: {
+                description: true
+              }
+            }
+          }
+        }
+      },
     });
 
     if (!session || session.expires < new Date()) {
-      return res.status(401).json({ error: 'Sesión inválida o expirada' });
+      sessionCache.delete(token);
+      return res.status(401).json({ 
+        error: 'Sesión expirada',
+      });
     }
 
-    // adjuntamos un "user" ligero al request (lo tipamos en types/express.d.ts)
-    (req as any).user = {
+    const userData = {
       id: session.user.id,
       email: session.user.email ?? null,
       name: session.user.name ?? null,
       verified: !!session.user.verified || !!session.user.emailVerified,
+      isAdmin: !!session.user.isAdmin,
+      roleId: session.user.id_role_role ?? null,
+      roleName: session.user.role?.description ?? null,
     };
 
+    // Guardar en caché (expira en 5 minutos)
+    sessionCache.set(token, {
+      user: userData,
+      expires: new Date(Date.now() + 5 * 60 * 1000)
+    });
+
+    req.user = userData;
     next();
   } catch (err) {
-    console.error('[requireAuth] error:', err);
-    return res.status(500).json({ error: 'Error de autenticación' });
+    console.error('❌ Auth error:', err);
+    return res.status(500).json({ 
+      error: 'Error de autenticación',
+    });
   }
 }
 
-/**
- * Variante opcional: exige además que el usuario esté verificado.
- */
-/*export async function requireVerified(req: Request, res: Response, next: NextFunction) {
-  // Primero exige autenticación
+export async function requireVerified(
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+) {
   await requireAuth(req, res, async () => {
-    const user = (req as any).user as { verified?: boolean };
-    if (!user?.verified) {
-      return res.status(403).json({ error: 'Cuenta no verificada' });
+    if (!req.user?.verified) {
+      return res.status(403).json({ 
+        error: 'Cuenta no verificada',
+      });
     }
     next();
   });
 }
-*/
+
+export async function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  await requireAuth(req, res, async () => {
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({
+        error: 'Acceso denegado',
+      });
+    }
+    next();
+  });
+}
+
+// Limpiar caché cada 10 minutos
+setInterval(() => {
+  const now = new Date();
+  for (const [token, data] of sessionCache.entries()) {
+    if (data.expires < now) {
+      sessionCache.delete(token);
+    }
+  }
+}, 10 * 60 * 1000);

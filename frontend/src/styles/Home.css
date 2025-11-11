@@ -1,0 +1,152 @@
+/* ====== Contenedor de HOME (no usa .login-*) ====== */
+.home-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 64px);
+  padding: 24px 16px;
+  background: #f3f4f6;
+}
+
+.home-box {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 960px;
+  text-align: left;
+}
+
+/* ====== Títulos / tipografía locales ====== */
+.project-name {
+  font-size: 28px;
+  font-weight: 800;
+  color: #2563eb;
+  margin: 0 0 6px 0;
+}
+
+/* ====== Badge de Rol con menú ====== */
+.home-role-wrap { margin: 8px 0; }
+
+.home-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #e5e7eb;
+  color: #111827;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-weight: 700;
+  position: relative;
+  user-select: none;
+}
+.home-role__hint {
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.role-badge__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  min-width: 220px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.08);
+  overflow: hidden;
+  z-index: 40;
+}
+
+.role-badge__item {
+  display: block;
+  width: 100%;
+  background: #f3f4f6;
+  border: none;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+  color: #2563eb;
+}
+.role-badge__item:hover { filter: brightness(.98); color: #e5e7eb; }
+
+/* ====== Acciones por rol (barra superior) ====== */
+.home-actions {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 0;
+}
+
+.home-toggle-hidden { margin-top: 12px; }
+
+/* ====== Grid de cursos (3 columnas) ====== */
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 16px;
+}
+@media (max-width: 960px){ .courses-grid{ grid-template-columns: repeat(2,1fr);} }
+@media (max-width: 640px){ .courses-grid{ grid-template-columns: 1fr;} }
+
+/* ====== Card de curso ====== */
+.course-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+}
+
+.course-card__menu { position: absolute; top: 8px; right: 8px; }
+
+.course-card__title {
+  font-weight: 800;
+  margin: 6px 0;
+  font-size: 16px;
+}
+
+.course-card__teacher {
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+
+/* ====== Dropdown genérico para acciones rápidas (reusa estilos del header) ====== */
+.user-menu__dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.08);
+  min-width: 200px;
+  overflow: hidden;
+  z-index: 60;
+}
+
+.user-menu__item {
+  width: 100%;
+  display: block;
+  text-align: left;
+  background: #f3f4f6;
+  border: none;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  color:#2563eb;
+}
+.user-menu__item:hover { filter: brightness(.98); color: #e5e7eb; }
+
+/* ====== Botón Custom (si necesitas refuerzo local) ====== */
+/* .custom-btn, .custom-btn--danger etc. ya pueden vivir en un global.
+   Si prefieres aislarlos, puedes copiarlos aquí. */
+.courses-hidden-section { margin-top: 16px; }
+.courses-hidden-title {
+  font-weight: 800;
+  color: #374151;
+  margin-bottom: 8px;
+}

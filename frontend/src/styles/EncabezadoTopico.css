@@ -1,0 +1,38 @@
+.topic-header {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #4f46e5;
+  }
+  
+  .topic-title {
+    font-size: 2.25rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .topic-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+  
+  .topic-badge {
+    background-color: #e0e7ff;
+    color: #4338ca;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+  }
+  
+  .topic-separator {
+    color: #6b7280;
+  }
+  
+  .topic-duration {
+    color: #6b7280;
+  }

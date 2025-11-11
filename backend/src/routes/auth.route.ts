@@ -4,32 +4,57 @@ import Google from "@auth/core/providers/google";
 import Credentials from "@auth/core/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import type { User as AuthUser } from "@auth/core/types";
-import { env, COOKIE_SECURE, IS_PROD} from "../env.js";
+import { env } from "../env.js";
 import { prisma } from "../utils/prisma.js";
+import {
+  registerController,
+  verifyEmailController,
+  resendVerificationController,
+} from "../controllers/auth.controller.js";
+import { 
+  resendVerificationLimiter, 
+  registerLimiter,
+  loginLimiter 
+} from "../middlewares/rateLimit.js";
 
-const COOKIE_NAME = "authjs.session-token";
+export const authRouter = Router();
 
+// edpoints personalizados
+authRouter.post("/register", registerLimiter, registerController);
+authRouter.get("/verify", verifyEmailController);
+authRouter.post("/resend-verification", resendVerificationLimiter, resendVerificationController);
+
+// configuración de Auth.js
 const handler = ExpressAuth({
   secret: env.AUTH_SECRET,
   trustHost: true,
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "database" },
+  
+  session: { 
+    strategy: "database",
+    maxAge: 30 * 24 * 60 * 60, // 30 días
+    updateAge: 24 * 60 * 60, // actualizar cada 24h
+  },
 
   providers: [
     Google({
       clientId: env.GOOGLE_CLIENT_ID!,
       clientSecret: env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true, // Permitir vinculación de cuentas con el mismo email
     }),
+
     Credentials({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" }
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       authorize: async (creds): Promise<AuthUser | null> => {
-        const email = creds?.email?.toString().toLowerCase();
+        const email = creds?.email?.toString().trim().toLowerCase();
         const password = creds?.password?.toString() || "";
+
         if (!email || !password) return null;
 
         const user = await prisma.user.findUnique({
@@ -39,68 +64,106 @@ const handler = ExpressAuth({
             email: true,
             name: true,
             image: true,
-            passwordHash: true,      
+            passwordHash: true,
             verified: true,
             emailVerified: true,
-          }
+          },
         });
 
         if (!user || !user.passwordHash) return null;
 
+        // Verificar si el email está confirmado
+        const isVerified = !!user.verified || !!user.emailVerified;
+        if (!isVerified) {
+          throw new Error("Debes verificar tu correo antes de iniciar sesión");
+        }
+
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
-
-        //if (!user.verified && !user.emailVerified) return null;
 
         return {
           id: user.id,
           email: user.email ?? null,
           name: user.name ?? null,
-          image: user.image ?? null
+          image: user.image ?? null,
         };
-      }
-    })
+      },
+    }),
   ],
 
   pages: {
     signIn: `${env.FRONTEND_ORIGIN}/login`,
     error: `${env.FRONTEND_ORIGIN}/login`,
     verifyRequest: `${env.FRONTEND_ORIGIN}/check-email`,
-    newUser: `${env.FRONTEND_ORIGIN}/login`
+    newUser: `${env.FRONTEND_ORIGIN}/home`,
   },
 
   callbacks: {
-    async signIn({ account }) {
-      if (account?.provider === "google") return true;
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { 
+            verified: true,
+            emailVerified: new Date()
+          },
+        });
+      }
       return true;
     },
+
+  async redirect({ url, baseUrl }) {
+    if (url.startsWith("/")) {
+      return `${baseUrl}${url}`;
+    }
+    try {
+      const parsed = new URL(url);
+      const frontendOrigin = env.FRONTEND_ORIGIN;
+
+      if (parsed.origin === baseUrl) {
+        return url;
+      }
+
+      if (parsed.origin === frontendOrigin) {
+        return url;
+      }
+    } catch (e) {
+      console.error('[auth redirect] URL inválida:', url, e);
+    }
+    return `${env.FRONTEND_ORIGIN}/login`;
+  },
     async session({ session, user }) {
-      if (session.user && user?.id) (session.user as any).id = user.id;
+      if (session.user && user) {
+        session.user.id = user.id;
+      }
       return session;
     },
-    async redirect({ url, baseUrl }) {
-        // Permite redirecciones al front
-        if (url.startsWith("http://localhost:5173")) return url;
-        if (url.startsWith("/")) return `${baseUrl}${url}`;
-        return baseUrl; // fallback
+  },
+
+  events: {
+    async signIn(message) {
+      console.log('✅ [auth] Usuario autenticado:', message.user?.email);
+    },
+    async signOut(message) {
+      console.log('👋 [auth] Usuario cerró sesión');
     },
   },
 
   cookies: {
     sessionToken: {
-      name: COOKIE_NAME,
+      name: `authjs.session-token`,
       options: {
         httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: COOKIE_SECURE,
-        ...(IS_PROD && env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
-      }
+        sameSite: 'lax',
+        path: '/',
+        secure: env.NODE_ENV === 'production',
+      },
     },
-    callbackUrl: { name: "authjs.callback-url", options: { sameSite: "lax", path: "/" } },
-    csrfToken: { name: "authjs.csrf-token", options: { sameSite: "lax", path: "/" } }
-  }
+  },
 });
 
-export const authRouter = Router();
+// Limitar intentos de login
+authRouter.use("/signin", loginLimiter);
+authRouter.use("/callback/credentials", loginLimiter);
+
 authRouter.use(handler);

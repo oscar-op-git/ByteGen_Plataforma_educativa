@@ -138,8 +138,9 @@ model User {
   first_name    String?     @db.VarChar
   last_name     String?     @db.VarChar
   passwordHash  String?     @map("password") @db.VarChar
-  id_role_role  Int?
   verified      Boolean?    @default(false)
+  isAdmin       Boolean     @default(false)
+  id_role_role  Int?
   accounts      Account[]
   sessions      Session[]
   community     community[]

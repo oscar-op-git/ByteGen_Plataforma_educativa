@@ -71,5 +71,5 @@
     /* Opcional: imports absolutos desde src */
     "baseUrl": "./src"
   },
-  "include": ["src"]
+  "include": ["src/**/*", "src/types/**/*"]
 }
