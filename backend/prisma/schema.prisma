@@ -65,10 +65,10 @@ model multimedia {
 model multimedia_topico {
   id_multimedia_multimedia   Int
   id_tipo_topico_tipo_topico Int
-  id_topico_topico           Int
-  multimedia                 multimedia  @relation(fields: [id_multimedia_multimedia], references: [id_multimedia], onDelete: Cascade, map: "multimedia_fk")
-  tipo_topico                tipo_topico @relation(fields: [id_tipo_topico_tipo_topico], references: [id_tipo_topico], onDelete: Cascade, map: "tipo_topico_fk")
-  topico                     topico      @relation(fields: [id_topico_topico], references: [id_topico], map: "topico_fk")
+  id_tipo_multimedia         Int
+  multimedia                 multimedia      @relation(fields: [id_multimedia_multimedia], references: [id_multimedia], onDelete: Cascade, map: "multimedia_fk")
+  topico                     topico          @relation(fields: [id_tipo_multimedia], references: [id_topico])
+  tipo_topico                tipo_multimedia @relation(fields: [id_tipo_topico_tipo_topico], references: [id_tipo_topico], onDelete: Cascade, map: "tipo_topico_fk")
 
   @@id([id_multimedia_multimedia, id_tipo_topico_tipo_topico], map: "multimedia_topico_pk")
 }
@@ -113,16 +113,11 @@ model tipo_pregunta {
   pregunta         pregunta[]
 }
 
-model tipo_topico {
-  id_tipo_topico    Int                 @id(map: "tipo_topico_pk") @default(autoincrement())
-  description       String?             @db.VarChar
-  multimedia_topico multimedia_topico[]
-}
-
 model topico {
   id_topico         Int                 @id(map: "topico_pk") @default(autoincrement())
   titulo            String?             @db.VarChar
   description       String?             @db.VarChar
+  comment           comment?
   evaluacion        evaluacion[]
   modulo            modulo[]
   multimedia_topico multimedia_topico[]
@@ -186,4 +181,29 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("auth_verification_token")
+}
+
+model comment {
+  id          Int       @id @default(autoincrement())
+  author_name String
+  content     String
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  topico_id   Int?      @unique
+  topico      topico?   @relation(fields: [topico_id], references: [id_topico], map: "fk_comment_topico")
+  replies     replies[]
+}
+
+model replies {
+  id          Int      @id @default(autoincrement())
+  comment_id  Int
+  author_name String
+  content     String
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  comment     comment  @relation(fields: [comment_id], references: [id], onDelete: Cascade, map: "fk_reply_comment")
+}
+
+model tipo_multimedia {
+  id_tipo_topico    Int                 @id(map: "tipo_topico_pk") @default(autoincrement())
+  description       String?             @db.VarChar
+  multimedia_topico multimedia_topico[]
 }
