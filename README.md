@@ -19,6 +19,7 @@ cd backend
 npm run dev 
 
 cd ../frontend
+npx @tailwindcss/cli -i ./src/styles/tailwind.css -o ./src/styles/output.css --watch
 npm run dev
 ```
 ----Linter y formato de código----
