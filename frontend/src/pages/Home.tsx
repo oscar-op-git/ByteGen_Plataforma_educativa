@@ -8,6 +8,7 @@ import JoinClassModal from '../components/JoinClassModal';
 import HeaderHome from '../components/HeaderHome';
 import FooterHome from '../components/FooterHome';
 import { getSession, signout } from '../services/authService';
+import { getPlantillas } from '../services/plantillaService.ts';
 import '../styles/Home.css';
 import toast from 'react-hot-toast';
 
@@ -25,7 +26,7 @@ type Course = {
   id: string; 
   title: string; 
   teacher: string; 
-  hidden?: boolean 
+  hidden?: boolean;
 };
 
 const Home: React.FC = () => {
@@ -34,47 +35,64 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [roleView, setRoleView] = useState<1 | 2 | 3>(2);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([
-    { id: 'c1', title: 'Introducción a Python', teacher: 'Prof. Ramírez' },
-    { id: 'c2', title: 'Primeros pasos de Python', teacher: 'Prof. Salinas' },
-    { id: 'c3', title: 'JavaScript Básico', teacher: 'Prof. Vargas' },
-    { id: 'c4', title: 'Nivel básico de Python', teacher: 'Prof. Quispe', hidden: true },
-    { id: 'c5', title: 'React Avanzado', teacher: 'Prof. Cruz' },
-    { id: 'c6', title: 'Curso básico de Python', teacher: 'Prof. Lara' },
-  ]);
+
+  // Ahora los cursos vienen de la tabla "plantilla"
+  const [courses, setCourses] = useState<Course[]>([]);
   const [showHidden, setShowHidden] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    getSession()
-      .then((session) => {
+    async function init() {
+      try {
+        // 1) Obtener sesión
+        const session = await getSession();
         if (!mounted) return;
-        
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            name: session.user.name || session.user.email,
-            email: session.user.email,
-            verified: session.user.verified ?? true,
-            isAdmin: session.user.isAdmin ?? false,
-            roleId: session.user.roleId ?? null,
-            roleName: session.user.roleName ?? null,
-          });
-          
-          // Establecer vista de rol
-          setRoleView(session.user.isAdmin ? 1 : 2);
-        } else {
+
+        if (!session?.user) {
+          navigate('/login');
+          return;
+        }
+
+        setUser({
+          id: session.user.id,
+          name: session.user.name || session.user.email,
+          email: session.user.email,
+          verified: (session.user as any).verified ?? true,
+          isAdmin: (session.user as any).isAdmin ?? false,
+          roleId: (session.user as any).roleId ?? null,
+          roleName: (session.user as any).roleName ?? null,
+        });
+
+        setRoleView((session.user as any).isAdmin ? 1 : 2);
+
+        // 2) Obtener plantillas del backend y mapearlas a "courses"
+        const plantillas = await getPlantillas();
+        if (!mounted) return;
+
+        const mapped: Course[] = plantillas.map((p: any) => ({
+          id: String(p.id_plantilla),
+          title: p.nombre || p.json?.title || `Plantilla #${p.id_plantilla}`,
+          teacher: p.userName || 'Docente no asignado',
+          hidden: p.es_borrador, // puedes ajustar esta lógica si quieres
+        }));
+
+        setCourses(mapped);
+      } catch (error) {
+        console.error('Error inicializando Home:', error);
+        if (mounted) {
+          toast.error('Error al cargar datos iniciales');
           navigate('/login');
         }
-      })
-      .catch(() => {
-        if (mounted) navigate('/login');
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    init();
 
     return () => {
       mounted = false;
@@ -97,15 +115,16 @@ const Home: React.FC = () => {
   }, [navigate]);
 
   const onEnterCourse = useCallback((id: string) => {
-    toast(`Entrando al curso ${id}`);
+    toast(`Entrando al bloque ${id}`);
     navigate("/topic/layout");
-  }, []);
+  }, [navigate]);
 
   const onToggleHidden = useCallback((id: string) => {
     setCourses((prev) => 
       prev.map((c) => (c.id === id ? { ...c, hidden: !c.hidden } : c))
     );
-    toast.success('Estado del curso actualizado');
+    toast.success('Estado del bloque actualizado');
+    // Si quieres persistir este cambio, aquí iría un PATCH al backend
   }, []);
 
   const onJoin = useCallback(async (code: string) => {
@@ -123,6 +142,10 @@ const Home: React.FC = () => {
   }
 
   if (!user) return null;
+
+  const roleLabel =
+    user.roleName ??
+    (user.isAdmin ? 'Administrador' : 'Sin rol asignado');
 
   return (
     <>
@@ -144,8 +167,12 @@ const Home: React.FC = () => {
       <div className="home-page">
         <HomeBox className="home-box">
           <h1 className="project-name">Bienvenido, {user.name}</h1>
+
+          <p style={{ marginTop: 8, fontSize: 14, color: '#666' }}>
+            Rol actual:&nbsp;
+            <strong>{roleLabel}</strong>
+          </p>
           
-          {/* Badge de rol */}
           <div className="home-role-wrap">
             <RoleBadge
               role={roleView}
@@ -155,7 +182,6 @@ const Home: React.FC = () => {
             />
           </div>
 
-          {/* Botón de unirse a clase */}
           <div style={{ marginTop: 16 }}>
             <CustomButton 
               label="Unirse a clase" 
@@ -164,7 +190,6 @@ const Home: React.FC = () => {
             />
           </div>
 
-          {/* Grid de cursos */}
           <div style={{ marginTop: 24 }}>
             <CoursesGrid
               courses={courses}
