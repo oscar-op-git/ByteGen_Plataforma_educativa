@@ -59,7 +59,7 @@ export default function LoginForm() {
   }
 
   async function handleSignOut() {
-    await signout(`${window.location.origin}/login`);
+    await signout();
   }
 
   // Si ya hay sesión, redirigir

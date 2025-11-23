@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { OrderedTopicsResponse, TopicDto, MultimediaDto } from './types';
+import { OrderedTopicsResponse, TopicDto, MultimediaDto } from './types.js';
 
 const prisma = new PrismaClient();
 

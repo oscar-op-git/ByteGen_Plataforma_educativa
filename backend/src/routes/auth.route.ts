@@ -132,10 +132,44 @@ const handler = ExpressAuth({
     }
     return `${env.FRONTEND_ORIGIN}/login`;
   },
+
     async session({ session, user }) {
-      if (session.user && user) {
-        session.user.id = user.id;
-      }
+      // session.user viene de Auth.js, `user` es lo que devuelve el adapter
+      if (!session.user || !user) return session;
+
+      // Cargamos de Prisma la info completa + rol
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id as string },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          verified: true,
+          emailVerified: true,
+          isAdmin: true,
+          id_role_role: true,
+          role: {
+            select: {
+              id_role: true,
+              description: true,
+            },
+          },
+        },
+      });
+
+      if (!dbUser) return session;
+
+      session.user.id = dbUser.id;
+      session.user.email = dbUser.email ?? session.user.email;
+      session.user.name = dbUser.name ?? session.user.name;
+
+      // Campos extra que quieres usar en el frontend:
+      (session.user as any).verified =
+        dbUser.verified ?? !!dbUser.emailVerified;
+      (session.user as any).isAdmin = dbUser.isAdmin;
+      (session.user as any).roleId = dbUser.id_role_role;
+      (session.user as any).roleName = dbUser.role?.description ?? null;
+
       return session;
     },
   },
