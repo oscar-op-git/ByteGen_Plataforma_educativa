@@ -47,6 +47,7 @@
 {
   "compilerOptions": {
     /* Paths */
+    
     "rootDir": "./src",
     "outDir": "./dist",
 
@@ -67,6 +68,7 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
+    
 
     /* Opcional: imports absolutos desde src */
     "baseUrl": "./src"
