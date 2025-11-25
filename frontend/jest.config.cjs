@@ -5,8 +5,11 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   testMatch: ['**/?(*.)+(test).(ts|tsx)'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs'],
+  moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+  },
 
-  // ✅ Nueva forma recomendada de configurar ts-jest (sin usar "globals")
+  //  Nueva forma recomendada de configurar ts-jest (sin usar "globals")
   transform: {
     '^.+\\.(ts|tsx)$': [
       'ts-jest',
@@ -16,6 +19,7 @@ module.exports = {
           jsx: 'react-jsx',
           esModuleInterop: true,
           allowSyntheticDefaultImports: true,
+          types: ['jest', '@testing-library/jest-dom'],
         },
         diagnostics: {
           ignoreCodes: [151002],
