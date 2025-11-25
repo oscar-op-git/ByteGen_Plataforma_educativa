@@ -23,6 +23,7 @@ model curso {
   description String?   @db.VarChar
   fecha_ini   DateTime? @db.Date
   fecha_fin   DateTime? @db.Date
+  group       group[]
   modulo      modulo[]
 }
 
@@ -36,12 +37,12 @@ model evaluacion {
 }
 
 model group {
-  id_group               Int         @id(map: "group_pk") @default(autoincrement())
-  description            Int?        @db.SmallInt
-  id_plantilla_plantilla Int?
-  community              community[]
-  plantilla              plantilla?  @relation(fields: [id_plantilla_plantilla], references: [id_plantilla], onUpdate: NoAction, map: "plantilla_fk")
-  orden                  orden[]
+  id_group         Int         @id(map: "group_pk") @default(autoincrement())
+  description      Int?        @db.SmallInt
+  id_course_course Int
+  community        community[]
+  curso            curso       @relation(fields: [id_course_course], references: [id_course], map: "curso_fk")
+  orden            orden[]
 }
 
 model modulo {
@@ -64,10 +65,10 @@ model multimedia {
 model multimedia_topico {
   id_multimedia_multimedia Int
   id_tipo_multimedia       Int
-  id_topico_topico_t       Int?
+  id_topico                Int?
   multimedia               multimedia      @relation(fields: [id_multimedia_multimedia], references: [id_multimedia], onDelete: Cascade, map: "multimedia_fk")
-  tipo_multimedia          tipo_multimedia @relation(fields: [id_tipo_multimedia], references: [id_tipo_multimedia], onDelete: Cascade)
-  topico                   topico?         @relation(fields: [id_topico_topico_t], references: [id_topico], onDelete: Cascade)
+  tipo_multimedia      tipo_multimedia @relation(fields: [id_tipo_multimedia], references: [id_tipo_multimedia], onDelete: Cascade)
+  topico              topico?         @relation(fields: [id_topico], references: [id_topico], onDelete: Cascade)
 
   @@id([id_multimedia_multimedia, id_tipo_multimedia], map: "multimedia_topico_pk")
 }
@@ -116,6 +117,7 @@ model topico {
   id_topico         Int                 @id(map: "topico_pk") @default(autoincrement())
   titulo            String?             @db.VarChar
   description       String?             @db.VarChar
+  comment           comment?
   evaluacion        evaluacion[]
   modulo            modulo[]
   multimedia_topico multimedia_topico[]
@@ -137,7 +139,6 @@ model User {
   accounts      Account[]
   sessions      Session[]
   community     community[]
-  plantilla     plantilla[]
   respuesta     respuesta[]
   role          role?       @relation(fields: [id_role_role], references: [id_role], map: "role_fk")
 
@@ -183,13 +184,13 @@ model VerificationToken {
 }
 
 model comment {
-  id           Int        @id @default(autoincrement())
-  author_name  String
-  content      String
-  created_at   DateTime   @default(now()) @db.Timestamptz(6)
-  plantilla_id Int?
-  plantilla    plantilla? @relation(fields: [plantilla_id], references: [id_plantilla], onDelete: Cascade)
-  replies      replies[]
+  id          Int       @id @default(autoincrement())
+  author_name String
+  content     String
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  topico_id   Int?      @unique
+  topico      topico?   @relation(fields: [topico_id], references: [id_topico], map: "fk_comment_topico")
+  replies     replies[]
 }
 
 model replies {
@@ -205,15 +206,4 @@ model tipo_multimedia {
   id_tipo_multimedia Int                 @id(map: "tipo_topico_pk") @default(autoincrement())
   description        String?             @db.VarChar
   multimedia_topico  multimedia_topico[]
-}
-
-model plantilla {
-  id_plantilla Int       @id @default(autoincrement())
-  es_borrador  Boolean   @default(true)
-  json         Json
-  nombre       String?   @db.VarChar
-  user_id      String?
-  comment      comment[]
-  group        group[]
-  user         User?     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }

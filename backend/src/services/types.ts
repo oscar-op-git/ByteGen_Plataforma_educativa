@@ -1,5 +1,4 @@
 // src/modules/groups/types.ts
-
 export interface MultimediaDto {
   id_multimedia: number;
   url_view?: string | null;
@@ -11,7 +10,7 @@ export interface TopicDto {
   id_topico: number;
   titulo?: string | null;
   description?: string | null;
-  puesto?: number | null; // orden.puesto
+  puesto?: number | null;
   multimedia: MultimediaDto[];
   comment?: {
     id: number;
@@ -23,6 +22,6 @@ export interface TopicDto {
 
 export interface OrderedTopicsResponse {
   id_group: number;
-  id_course?: number; // opcional si quieres incluir curso
+  id_course: number;
   topics: TopicDto[];
 }

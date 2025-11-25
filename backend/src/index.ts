@@ -13,6 +13,8 @@ import { loginLimiter } from "./middlewares/rateLimit.js";
 import userRouter from "./routes/user.route.js";
 import roleRouter from "./routes/role.route.js";
 import groupRouter from './controllers/group.controller.js';
+import plantillaRouter from "./routes/plantilla.route.js";
+
 
 const app = express();
 
@@ -145,6 +147,8 @@ app.use('/api/groups', groupRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/roles", roleRouter);
+
+app.use("/api/plantillas", plantillaRouter);
 
 app.get("/", (_req, res) => {
   res.json({ message: "EduMaster API" });

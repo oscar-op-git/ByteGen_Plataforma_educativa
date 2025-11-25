@@ -25,41 +25,6 @@ export default function TopicLesson() {
     id: '1',
     title: 'Introducción a Python',
     blocks: [
-      /*{
-        id: '1',
-        type: 'text',
-        content: 'Python es un lenguaje de programación de alto nivel, interpretado y de propósito general. Es conocido por su sintaxis clara y legible, lo que lo hace ideal para principiantes.'
-      },
-      {
-        id: '2',
-        type: 'code',
-        content: `# Mi primer programa en Python
-print("¡Hola Mundo!")
-print("Python es genial")
-# Variables
-nombre = "Estudiante"
-print(f"Bienvenido, {nombre}!")`,
-        language: 'python'
-      },
-      {
-        id: '3',
-        type: 'text',
-        content: 'Python usa indentación para definir bloques de código. Esto hace que el código sea más legible y limpio.'
-      },
-      {
-        id: '4',
-        type: 'code',
-        content: `# Estructuras de control
-for i in range(5):
-  print(f"Número: {i}")
-# Condicionales
-edad = 18
-if edad >= 18:
-  print("Eres mayor de edad")
-else:
-  print("Eres menor de edad")`,
-        language: 'python'
-      },*/
       {
         id: '8',
         type: 'slides',
