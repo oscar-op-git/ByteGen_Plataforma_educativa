@@ -30,12 +30,13 @@ describe('validation.utils', () => {
     expect(strong.hasSpecialChar).toBe(true);
   });
 
-  test('isPasswordValid exige largo + mayus + minus + número (pero no special)', () => {
-    expect(isPasswordValid('Abcdef12')).toBe(true);   // cumple
-    expect(isPasswordValid('abcdef12')).toBe(false);  // sin mayus
-    expect(isPasswordValid('ABCDEFG1')).toBe(false);  // sin minus
-    expect(isPasswordValid('Abcdefgh')).toBe(false);  // sin número
-    expect(isPasswordValid('Ab1')).toBe(false);       // muy corta
+  test('isPasswordValid exige largo + mayus + minus + número + (y en nuestra política, también special)', () => {
+    expect(isPasswordValid('Abcdef12!')).toBe(true);   // cumple todas
+    expect(isPasswordValid('Abcdef12')).toBe(false);   // sin special
+    expect(isPasswordValid('abcdef12')).toBe(false);   // sin mayus
+    expect(isPasswordValid('ABCDEFG1!')).toBe(false);  // sin minus
+    expect(isPasswordValid('Abcdefgh!')).toBe(false);  // sin número
+    expect(isPasswordValid('Ab1!')).toBe(false);       // muy corta
   });
 
   test('validateName requiere mínimo 2 caracteres no vacíos', () => {

@@ -1,101 +1,124 @@
-import React from 'react';
-import { render } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useRegisterForm } from './useRegisterForm';
 
-// Truco simple para testear hooks con un componente dummy
-let hookResult: ReturnType<typeof useRegisterForm>;
-
-function TestComponent() {
-  hookResult = useRegisterForm();
-  return null;
-}
-
 describe('useRegisterForm', () => {
-  beforeEach(() => {
-    render(<TestComponent />);
-  });
-
   test('estado inicial correcto', () => {
-    expect(hookResult.formData).toEqual({
+    const { result } = renderHook(() => useRegisterForm());
+
+    expect(result.current.formData).toEqual({
       name: '',
       email: '',
       password: '',
       confirmPassword: '',
     });
-    expect(hookResult.errors).toEqual({});
-    expect(hookResult.isSubmitting).toBe(false);
-    expect(hookResult.showPassword).toBe(false);
-    expect(hookResult.showConfirmPassword).toBe(false);
+    expect(result.current.errors).toEqual({});
+    expect(result.current.isSubmitting).toBe(false);
+    expect(result.current.showPassword).toBe(false);
+    expect(result.current.showConfirmPassword).toBe(false);
   });
 
   test('handleChange actualiza formData y limpia error del campo', () => {
-    hookResult.setIsSubmitting(true);
+    const { result } = renderHook(() => useRegisterForm());
 
-    // Simulamos que ya había un error en name
-    hookResult['setIsSubmitting']; // solo para que TS no se queje del uso
-    // accedemos interno para el test
-    hookResult.errors.name = 'Error previo';
+    // Primero provocamos un error para "name"
+    let isValid: boolean;
+    act(() => {
+      isValid = result.current.validate();
+    });
+    expect(isValid!).toBe(false);
+    expect(result.current.errors.name).toBe('El nombre es requerido');
 
-    hookResult.handleChange({
-      target: { name: 'name', value: 'Oscar' },
-    } as React.ChangeEvent<HTMLInputElement>);
+    // Ahora cambiamos el valor de "name"
+    act(() => {
+      result.current.handleChange({
+        target: { name: 'name', value: 'Oscar' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
 
-    expect(hookResult.formData.name).toBe('Oscar');
-    expect(hookResult.errors.name).toBeUndefined();
+    expect(result.current.formData.name).toBe('Oscar');
+    expect(result.current.errors.name).toBeUndefined();
   });
 
   test('validate devuelve false y setea errores cuando el formulario es inválido', () => {
-    // formData está vacío por defecto
-    const isValid = hookResult.validate();
+    const { result } = renderHook(() => useRegisterForm());
 
-    expect(isValid).toBe(false);
-    expect(hookResult.errors.name).toBe('El nombre es requerido');
-    expect(hookResult.errors.email).toBe('El email es requerido');
-    expect(hookResult.errors.password).toBe('La contraseña es requerida');
-    expect(hookResult.errors.confirmPassword).toBe('Confirma tu contraseña');
+    let isValid: boolean;
+    act(() => {
+      isValid = result.current.validate();
+    });
+
+    expect(isValid!).toBe(false);
+    expect(result.current.errors.name).toBe('El nombre es requerido');
+    expect(result.current.errors.email).toBe('El email es requerido');
+    expect(result.current.errors.password).toBe('La contraseña es requerida');
+    expect(result.current.errors.confirmPassword).toBe(
+      'Confirma tu contraseña',
+    );
   });
 
   test('validate devuelve true cuando el formulario es válido', () => {
-    // llenamos formData con datos válidos
-    hookResult.handleChange({
-      target: { name: 'name', value: 'Oscar' },
-    } as React.ChangeEvent<HTMLInputElement>);
-    hookResult.handleChange({
-      target: { name: 'email', value: 'test@example.com' },
-    } as React.ChangeEvent<HTMLInputElement>);
-    hookResult.handleChange({
-      target: { name: 'password', value: 'Password1' },
-    } as React.ChangeEvent<HTMLInputElement>);
-    hookResult.handleChange({
-      target: { name: 'confirmPassword', value: 'Password1' },
-    } as React.ChangeEvent<HTMLInputElement>);
+    const { result } = renderHook(() => useRegisterForm());
 
-    const isValid = hookResult.validate();
+    act(() => {
+      result.current.handleChange({
+        target: { name: 'name', value: 'Oscar' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleChange({
+        target: { name: 'email', value: 'test@example.com' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleChange({
+        target: { name: 'password', value: 'Password1!' },           // 👈 ojo acá
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleChange({
+        target: { name: 'confirmPassword', value: 'Password1!' },    // 👈 igual acá
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
 
-    expect(isValid).toBe(true);
-    expect(hookResult.errors).toEqual({});
+    let isValid: boolean;
+    act(() => {
+      isValid = result.current.validate();
+    });
+
+    expect(isValid!).toBe(true);
+    expect(result.current.errors).toEqual({});
   });
 
   test('resetForm limpia todo el estado', () => {
-    // Populamos algo
-    hookResult.handleChange({
-      target: { name: 'name', value: 'Oscar' },
-    } as React.ChangeEvent<HTMLInputElement>);
-    hookResult.setIsSubmitting(true);
-    hookResult.setShowPassword(true);
-    hookResult.setShowConfirmPassword(true);
+    const { result } = renderHook(() => useRegisterForm());
 
-    hookResult.resetForm();
+    // Rellenamos datos y flags
+    act(() => {
+      result.current.handleChange({
+        target: { name: 'name', value: 'Oscar' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleChange({
+        target: { name: 'email', value: 'test@example.com' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleChange({
+        target: { name: 'password', value: 'Password1' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleChange({
+        target: { name: 'confirmPassword', value: 'Password1' },
+      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.setIsSubmitting(true);
+      result.current.setShowPassword(true);
+      result.current.setShowConfirmPassword(true);
+    });
 
-    expect(hookResult.formData).toEqual({
+    // Reseteamos
+    act(() => {
+      result.current.resetForm();
+    });
+
+    expect(result.current.formData).toEqual({
       name: '',
       email: '',
       password: '',
       confirmPassword: '',
     });
-    expect(hookResult.errors).toEqual({});
-    expect(hookResult.isSubmitting).toBe(false);
-    expect(hookResult.showPassword).toBe(false);
-    expect(hookResult.showConfirmPassword).toBe(false);
+    expect(result.current.errors).toEqual({});
+    expect(result.current.isSubmitting).toBe(false);
+    expect(result.current.showPassword).toBe(false);
+    expect(result.current.showConfirmPassword).toBe(false);
   });
 });
