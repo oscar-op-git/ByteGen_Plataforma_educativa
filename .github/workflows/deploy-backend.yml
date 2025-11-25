@@ -1,0 +1,49 @@
+name: Deploy backend to Cloud Run
+
+on:
+  push:
+    branches:
+      - main   # o dev, según tu flujo
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+    #  - name: Set up gcloud
+    #    uses: google-github-actions/setup-gcloud@v2
+    #    with:
+    #      project_id: ${{ secrets.GCP_PROJECT_ID }}
+    #      service_account_key: ${{ secrets.GCP_SA_KEY }}
+    #      export_default_credentials: true
+
+    #  - name: Configure Docker auth
+    #    run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+    #  - name: Build and push backend image
+    #    working-directory: ./backend
+    #    run: |
+    #      IMAGE="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/bytegen-repo/backend:${{ github.sha }}"
+    #      docker build -t "$IMAGE" .
+    #      docker push "$IMAGE"
+    #      echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+    #  - name: Deploy to Cloud Run
+    #    run: |
+    #      gcloud run deploy backend-service \
+    #        --image $IMAGE \
+    #        --platform managed \
+    #        --region us-central1 \
+    #        --allow-unauthenticated \
+    #        --min-instances=0 \
+    #        --max-instances=3 \
+    #        --set-env-vars "NODE_ENV=production" \
+    #        --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}" \
+    #        --set-env-vars "DIRECT_URL=${{ secrets.DIRECT_URL }}" \
+    #        --set-env-vars "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" \
+    #        --set-env-vars "AUTH_URL=${{ secrets.AUTH_URL }}" \
+    #        --set-env-vars "FRONTEND_ORIGIN=${{ secrets.FRONTEND_ORIGIN }}" \
+    #        --set-env-vars "COOKIE_DOMAIN=${{ secrets.COOKIE_DOMAIN }}"
