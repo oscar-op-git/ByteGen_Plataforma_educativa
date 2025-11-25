@@ -7,6 +7,13 @@ import {
   type JsonValue,
 } from 'golden-layout';
 
+import {
+  fetchCommentForPlantilla,
+  postMainCommentApi,
+  postReplyApi,
+} from "../services/commentService";
+
+
 
 import type { Topic } from '../types/topic.types';
 import { getSession } from '../services/authService';
@@ -410,110 +417,146 @@ sys.stdout = StringIO()
   }, [updateOutput]);
 
   type UserSession = {
-    name?: string;
-    role?: number;
-    roles?: number[];
+    id: string;
+    email?: string | null;
+    name?: string | null;
+    isAdmin?: boolean;
+    roleId?: number | null;
+    roleName?: string | null;
   };
 
+
   type Comment = {
-  id: string;
-  authorName: string;
-  authorRole?: number;
-  content: string;
-  createdAt: string;
-  replies: Array<{
     id: string;
     authorName: string;
     authorRole?: number;
     content: string;
     createdAt: string;
-  }>;
-};
+    replies: Array<{
+      id: string;
+      authorName: string;
+      authorRole?: number;
+      content: string;
+      createdAt: string;
+    }>;
+  };
 
 function CommentSection({ topicId }: { topicId: string }) {
   const [session, setSession] = useState<UserSession | null>(null);
-  const [loadingSession, setLoadingSession] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
   const [mainText, setMainText] = useState('');
   const [replyText, setReplyText] = useState('');
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
 
-  const ALLOWED_ROLES = [1, 3]; // Ejemplo: 1 = Admin, 3 = Docente
+  const getErrorMessage = (err: unknown): string => {
+    if (err instanceof Error) return err.message;
+    if (typeof err === "string") return err;
+    return "Ocurrió un error inesperado.";
+  };
 
   useEffect(() => {
-    (async () => {
-      try {
-        const s = await getSession();
-        setSession(s?.user ?? null);
-      } catch {
-        setSession(null);
-      } finally {
-        setLoadingSession(false);
-      }
-    })();
+    console.log("[CommentSection] session:", session);
+  }, [session]);
 
-    const key = `comments_topic_${topicId}`;
-    const raw = localStorage.getItem(key);
-    setComments(raw ? JSON.parse(raw) : []);
-  }, [topicId]);
+  const ALLOWED_ROLES = [1, 2, 4]; // Ejemplo: 1 = Admin, 3 = Docente
 
-  const saveComments = (next: Comment[]) => {
-    setComments(next);
-    localStorage.setItem(`comments_topic_${topicId}`, JSON.stringify(next));
-  };
+
+    useEffect(() => {
+      ;(async () => {
+        try {
+          const s = await getSession();
+          setSession(s?.user ?? null);
+        } catch {
+          setSession(null);
+        }
+      })();
+
+      (async () => {
+        try {
+          const data = await fetchCommentForPlantilla(topicId);
+          setComments(data ? [data] : []);
+        } catch (error: unknown) {
+          console.error("Error al cargar comentarios:", error);
+          setComments([]);
+        }
+      })();
+    }, [topicId]);
+
+
 
   const userCanInteract = () => {
-    if (!session) return false;
-    const r =
-      session.role ??
-      (Array.isArray(session.roles) ? session.roles[0] : undefined);
-    return r !== undefined && ALLOWED_ROLES.includes(r);
+    if (!session) {
+      console.log("[CommentSection] userCanInteract => false (no session)");
+      return false;
+    }
+
+    if (session.isAdmin) {
+      console.log("[CommentSection] userCanInteract => true (isAdmin)");
+      return true;
+    }
+
+    const r = session.roleId ?? undefined;
+    const can = r !== undefined && ALLOWED_ROLES.includes(r);
+
+    console.log("[CommentSection] roleId:", r, "allowed:", can);
+
+    return can;
   };
 
-  const handlePostMain = () => {
+
+
+  const handlePostMain = async () => {
     if (!userCanInteract() || !mainText.trim()) return;
     if (comments.length > 0) {
       alert(
-        'Ya existe un comentario principal. Solo se permiten respuestas al comentario principal.'
+        "Ya existe un comentario principal. Solo se permiten respuestas al comentario principal."
       );
       return;
     }
-    const now = new Date().toISOString();
-    const newComment: Comment = {
-      id: 'c-' + Date.now(),
-      authorName: session?.name ?? 'Usuario',
-      authorRole: session?.role ?? undefined,
-      content: mainText.trim(),
-      createdAt: now,
-      replies: [],
-    };
-    saveComments([newComment]);
-    setMainText('');
+
+    try {
+      const created = await postMainCommentApi(topicId, mainText.trim());
+
+      const newComment: Comment = {
+        id: created.id,
+        authorName: created.authorName,
+        content: created.content,
+        createdAt: created.createdAt,
+        replies: created.replies ?? [],
+      };
+
+      setComments([newComment]);
+      setMainText("");
+    } catch (error: unknown) {
+      alert(getErrorMessage(error));
+    }
   };
 
-  const handlePostReply = (parentId: string) => {
+
+  const handlePostReply = async (parentId: string) => {
     if (!userCanInteract() || !replyText.trim()) return;
-    const now = new Date().toISOString();
-    const newReply = {
-      id: 'r-' + Date.now(),
-      authorName: session?.name ?? 'Usuario',
-      authorRole: session?.role ?? undefined,
-      content: replyText.trim(),
-      createdAt: now,
-    };
-    const next = comments.map((c) =>
-      c.id === parentId ? { ...c, replies: [...c.replies, newReply] } : c
-    );
-    saveComments(next);
-    setReplyText('');
-    setReplyingToId(null);
-  };
 
-  if (loadingSession) {
-    return (
-      <div className="p-4 text-gray-500">Cargando sección de comentarios...</div>
-    );
-  }
+    try {
+      const created = await postReplyApi(parentId, replyText.trim());
+
+      const newReply = {
+        id: created.id,
+        authorName: created.authorName,
+        content: created.content,
+        createdAt: created.createdAt,
+      };
+
+      const next = comments.map((c) =>
+        c.id === parentId ? { ...c, replies: [...c.replies, newReply] } : c
+      );
+
+      setComments(next);
+      setReplyText("");
+      setReplyingToId(null);
+    } catch (error: unknown) {
+      alert(getErrorMessage(error));
+    }
+  };
 
   const mainExists = comments.length > 0;
 
