@@ -3,7 +3,7 @@ name: Deploy backend to Cloud Run
 on:
   push:
     branches:
-      - main   # o dev, según tu flujo
+      - main  
 
 jobs:
   deploy-backend:
