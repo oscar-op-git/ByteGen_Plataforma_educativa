@@ -1,4 +1,3 @@
-// src/routes/comment.route.ts
 import { Router } from "express";
 import { requireAuth } from "../middlewares/requireAuth.js";
 import {

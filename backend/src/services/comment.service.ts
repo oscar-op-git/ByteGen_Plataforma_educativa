@@ -1,4 +1,3 @@
-// src/services/comment.service.ts
 import { prisma } from "../utils/prisma.js";
 
 export type CommentWithRepliesDto = {
