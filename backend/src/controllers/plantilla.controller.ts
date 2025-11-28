@@ -4,6 +4,18 @@ import { listPlantillas } from "../services/plantillaService.js";
 import { prisma } from '../utils/prisma.js';
 import { createPlantillaSchema } from '../utils/validators/plantilla.validators.js';
 
+// Tipado auxiliar para acceder a req.user
+type AuthedRequest = Request & {
+  user?: {
+    id: string;
+    email?: string;
+    name?: string;
+    isAdmin?: boolean;
+    roleId?: number | null;
+    roleName?: string | null;
+  };
+};
+
 export async function getPlantillas(req: Request, res: Response) {
   try {
     const items = await listPlantillas();
@@ -17,23 +29,34 @@ export async function getPlantillas(req: Request, res: Response) {
   }
 }
 
-
 export async function createPlantilla(req: Request, res: Response) {
   try {
     const parsed = createPlantillaSchema.parse(req.body);
+
+    const { user } = req as AuthedRequest;
+    const userId = user?.id ?? null;
 
     const nueva = await prisma.plantilla.create({
       data: {
         nombre: parsed.nombre,
         es_borrador: parsed.es_borrador ?? true,
         json: parsed.json,
-        // user_id: sacarlo de req.user / session si lo tienes
+        // Aquí relacionamos la plantilla con el usuario autenticado
+        user_id: userId, // tu modelo tiene user_id?: String?
       },
       select: {
         id_plantilla: true,
         nombre: true,
         es_borrador: true,
         json: true,
+        user_id: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -53,15 +76,28 @@ export async function createPlantilla(req: Request, res: Response) {
 // GET /api/plantillas/:id
 export async function getPlantilla(req: Request, res: Response) {
   const id = Number(req.params.id);
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ message: 'ID inválido' });
+  }
+
   const plantilla = await prisma.plantilla.findUnique({
     where: { id_plantilla: id },
     select: {
       id_plantilla: true,
       nombre: true,
       es_borrador: true,
-      json: true
+      json: true,
+      user_id: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
     },
   });
+
   if (!plantilla) {
     return res.status(404).json({ message: 'Plantilla no encontrada' });
   }
@@ -71,9 +107,15 @@ export async function getPlantilla(req: Request, res: Response) {
 // PATCH /api/plantillas/:id
 export async function updatePlantilla(req: Request, res: Response) {
   const id = Number(req.params.id);
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ message: 'ID inválido' });
+  }
+
   const { nombre, es_borrador, json } = req.body;
 
-  // Aquí podrías validar json con Zod (topicJsonSchema) si quieres
+  // Si quisieras guardar también "último editor", podríamos meter otro campo
+  // Por ahora mantenemos el author original (user_id) tal como está en BD.
+
   const updated = await prisma.plantilla.update({
     where: { id_plantilla: id },
     data: {
@@ -86,6 +128,14 @@ export async function updatePlantilla(req: Request, res: Response) {
       nombre: true,
       es_borrador: true,
       json: true,
+      user_id: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
     },
   });
 
