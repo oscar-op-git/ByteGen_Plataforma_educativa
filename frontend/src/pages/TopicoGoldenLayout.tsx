@@ -7,10 +7,12 @@ import {
   type JsonValue,
 } from 'golden-layout';
 
+import { useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 import type { Topic } from '../types/topic.types';
 import { getSession } from '../services/authService';
-
+import { getPlantillas } from '../services/plantillaService';
 
 import TextBlock from '../components/BloqueTexto';
 import CodeBlock from '../components/BloqueCodigo';
@@ -23,7 +25,7 @@ import LessonNavigation from '../components/BotonesNavegacion';
 import '../styles/Topico.css';
 import 'golden-layout/dist/css/goldenlayout-base.css';
 import 'golden-layout/dist/css/themes/goldenlayout-light-theme.css';
-
+import { useNavigate } from 'react-router-dom'; // 👈 NUEVO
 // --- Tipos para el state de Golden Layout ---
 type BlockState = {
   blockId: string;
@@ -59,363 +61,17 @@ declare global {
   }
 }
 
-// --- Mock de tópico solo para esta vista (sin backend aún) ---
-const mockTopic: Topic = {
-  id: '1',
-  title: 'Introducción a Python',
-  variant: 'basic',
-  blocks: [
-    {
-      id: '1',
-      type: 'text',
-      content:
-        'Python es un lenguaje de programación interpretado, fácil de leer y escribir. Es ideal para aprender a programar.',
-    },
-    {
-      id: '2',
-      type: 'code',
-      content: 'print("Hola desde Python!")',
-      language: 'python',
-    },
-    {
-      id: '3',
-      type: 'slides',
-      content: JSON.stringify({
-        pdfUrl: '/documentos/1P_Tema 1-1.pdf',
-        totalPages: 18,
-        startPage: 1,
-        audioUrl: '/documentos/KAL EL NO.mp3',
-        transcript: [
-          { start: 0, end: 8, text: 'Bienvenido/a a la lección.' },
-          {
-            start: 8,
-            end: 20,
-            text: 'Python es legible, versátil y tiene una comunidad enorme.',
-          },
-          {
-            start: 20,
-            end: 35,
-            text: 'Revisaremos tipos de datos básicos y cómo ejecutar código.',
-          },
-        ],
-      }),
-    },
-    {
-      id: '4',
-      type: 'video',
-      content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    },
-  ],
+// -----------------------
+//  Sección de comentarios
+// -----------------------
+
+type UserSession = {
+  name?: string;
+  role?: number;
+  roles?: number[];
 };
 
-export default function TopicoGoldenLayout() {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  // Estado de navegación
-  const [currentLesson, setCurrentLesson] = useState(1);
-
-  // Pyodide y ejecución
-  const pyodideRef = useRef<PyodideInterface | null>(null);
-  const isExecutingRef = useRef(false);
-
-  // Root y mensaje actual de la ventana de salida
-  const outputRootRef = useRef<Root | null>(null);
-  const outputMessageRef = useRef<string>('⏳ Cargando intérprete de Python...');
-
-  // Helper para actualizar la ventana de salida
-  const updateOutput = useCallback((msg: string) => {
-    outputMessageRef.current = msg;
-    const root = outputRootRef.current;
-    if (root) {
-      root.render(<CodeOutput output={msg} />);
-    }
-  }, []);
-
-  // Cargar Pyodide al montar el componente
-  useEffect(() => {
-    const loadPyodideInstance = async () => {
-      try {
-        updateOutput('⏳ Cargando intérprete de Python...');
-        const pyodideInstance = await window.loadPyodide({
-          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
-        });
-        pyodideRef.current = pyodideInstance;
-        updateOutput(
-          '✓ Intérprete de Python listo. Ejecuta un bloque de código para comenzar.',
-        );
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Error desconocido';
-        updateOutput(`✗ Error al cargar Python: ${errorMessage}`);
-      }
-    };
-
-    loadPyodideInstance();
-  }, [updateOutput]);
-
-  // Navegación de lecciones (reutilizado)
-  const handlePrevious = () => {
-    if (currentLesson > 1) {
-      setCurrentLesson(currentLesson - 1);
-    }
-  };
-
-  const handleNext = () => {
-    const totalLessons = 10;
-    if (currentLesson < totalLessons) {
-      setCurrentLesson(currentLesson + 1);
-    }
-  };
-
-  // Inicialización de Golden Layout (una sola vez)
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const layout = new GoldenLayout(containerRef.current);
-
-    const getBlock = (blockId: string) =>
-      mockTopic.blocks.find((b) => b.id === blockId);
-
-    // 1) Bloque de texto
-    layout.registerComponentFactoryFunction(
-      'text-block',
-      (container: ComponentContainer, state: JsonValue | undefined) => {
-        const blockState = asBlockState(state);
-        if (!blockState) return;
-
-        const block = getBlock(blockState.blockId);
-        if (!block) return;
-
-        const host = document.createElement('div');
-        container.element.append(host);
-        const root = createRoot(host);
-
-        root.render(<TextBlock content={block.content} />);
-
-        container.on('destroy', () => {
-          root.unmount();
-        });
-      },
-    );
-
-    // 2) Bloque de código (con Pyodide integrado a través de refs)
-    layout.registerComponentFactoryFunction(
-      'code-block',
-      (container: ComponentContainer, state: JsonValue | undefined) => {
-        const blockState = asBlockState(state);
-        if (!blockState) return;
-
-        const block = getBlock(blockState.blockId);
-        if (!block) return;
-
-        const host = document.createElement('div');
-        container.element.append(host);
-        const root = createRoot(host);
-
-        const executeCode = async (code: string) => {
-          const pyodide = pyodideRef.current;
-          if (!pyodide || isExecutingRef.current) return;
-
-          isExecutingRef.current = true;
-          updateOutput('⏳ Ejecutando código...');
-
-          try {
-            // Redirigir stdout a un buffer
-            await pyodide.runPythonAsync(
-              `
-import sys
-from io import StringIO
-sys.stdout = StringIO()
-`,
-            );
-
-            // Ejecutar el código del usuario
-            await pyodide.runPythonAsync(code);
-
-            // Obtener la salida capturada
-            const stdout = await pyodide.runPythonAsync(
-              'sys.stdout.getvalue()',
-            );
-
-            if (stdout && stdout.trim()) {
-              updateOutput(`✓ Código ejecutado correctamente\n\n${stdout}`);
-            } else {
-              updateOutput(
-                '✓ Código ejecutado correctamente\n\n(Sin salida)',
-              );
-            }
-          } catch (error) {
-            const errorMessage =
-              error instanceof Error ? error.message : 'Error desconocido';
-            updateOutput(`✗ Error de Python:\n\n${errorMessage}`);
-          } finally {
-            isExecutingRef.current = false;
-          }
-        };
-
-        root.render(
-          <CodeBlock
-            content={block.content}
-            language={block.language}
-            blockId={block.id}
-            onExecute={executeCode}
-            isExecuting={isExecutingRef.current}
-          />,
-        );
-
-        container.on('destroy', () => {
-          root.unmount();
-        });
-      },
-    );
-
-    // 3) Bloque de diapositivas (PDF + audio + transcript)
-    layout.registerComponentFactoryFunction(
-      'slides-block',
-      (container: ComponentContainer, state: JsonValue | undefined) => {
-        const blockState = asBlockState(state);
-        if (!blockState) return;
-
-        const block = getBlock(blockState.blockId);
-        if (!block) return;
-
-        const host = document.createElement('div');
-        container.element.append(host);
-        const root = createRoot(host);
-
-        root.render(<PdfBlock content={block.content} />);
-
-        container.on('destroy', () => {
-          root.unmount();
-        });
-      },
-    );
-
-    // 4) Bloque de video
-    layout.registerComponentFactoryFunction(
-      'video-block',
-      (container: ComponentContainer, state: JsonValue | undefined) => {
-        const blockState = asBlockState(state);
-        if (!blockState) return;
-
-        const block = getBlock(blockState.blockId);
-        if (!block) return;
-
-        const host = document.createElement('div');
-        container.element.append(host);
-        const root = createRoot(host);
-
-        root.render(
-          <VideoBlock
-            urlOrId={block.content}
-            title="Video de apoyo"
-          />,
-        );
-
-        container.on('destroy', () => {
-          root.unmount();
-        });
-      },
-    );
-
-    // 5) Bloque de salida de código (dentro de Golden Layout)
-    layout.registerComponentFactoryFunction(
-      'output-block',
-      (container: ComponentContainer) => {
-        const host = document.createElement('div');
-        container.element.append(host);
-        const root = createRoot(host);
-
-        // Guardamos el root para poder re-renderizar cuando cambie la salida
-        outputRootRef.current = root;
-
-        root.render(
-          <CodeOutput output={outputMessageRef.current} />,
-        );
-
-        container.on('destroy', () => {
-          root.unmount();
-          if (outputRootRef.current === root) {
-            outputRootRef.current = null;
-          }
-        });
-      },
-    );
-
-    const layoutConfig: LayoutConfig = {
-      root: {
-        type: 'column',
-        content: [
-          {
-            type: 'row',
-            content: [
-              {
-                type: 'column',
-                content: [
-                  {
-                    type: 'component',
-                    componentType: 'text-block',
-                    title: 'Teoría',
-                    componentState: { blockId: '1' },
-                  },
-                  {
-                    type: 'stack',
-                    content: [
-                      {
-                        type:'component',
-                        componentType: 'code-block',
-                        title: 'Código',
-                        componentState: { blockId: '2' },
-                      },
-                      {
-                        type: 'component',
-                        componentType: 'output-block',
-                        title: 'Salida de código',
-                        componentState: {},
-                      },
-                    ]
-                    
-                  },
-                ],
-              },
-              {
-                type: 'stack',
-                content: [
-                  {
-                    type: 'component',
-                    componentType: 'slides-block',
-                    title: 'Diapositivas',
-                    componentState: { blockId: '3' },
-                  },
-                  {
-                    type: 'component',
-                    componentType: 'video-block',
-                    title: 'Video',
-                    componentState: { blockId: '4' },
-                  },
-                ],
-              },
-            ],
-          },
-          
-        ],
-      },
-    };
-
-    layout.loadLayout(layoutConfig);
-
-    return () => {
-      layout.destroy();
-    };
-  }, [updateOutput]);
-
-  type UserSession = {
-    name?: string;
-    role?: number;
-    roles?: number[];
-  };
-
-  type Comment = {
+type Comment = {
   id: string;
   authorName: string;
   authorRole?: number;
@@ -545,8 +201,7 @@ function CommentSection({ topicId }: { topicId: string }) {
           ) : (
             <div className="text-gray-600">
               <p>
-                Solo usuarios con rol permitido pueden publicar el comentario
-                principal y responder.
+                Solo usuarios con rol permitido pueden publicar el comentario principal y responder.
               </p>
               <a
                 href="/login"
@@ -664,11 +319,444 @@ function CommentSection({ topicId }: { topicId: string }) {
   );
 }
 
+// -----------------------------
+//   Componente principal viewer
+// -----------------------------
+
+export default function TopicoGoldenLayout() {
+  const navigate = useNavigate(); // 👈 para navegar al editor
+  const [selectedPlantillaId, setSelectedPlantillaId] = useState<number | null>(null);
+  
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  
+  const { plantillaId } = useParams<{ plantillaId?: string }>();
+
+  const [topic, setTopic] = useState<Topic | null>(null);
+  const [loadingTopic, setLoadingTopic] = useState(true);
+
+  // Estado de navegación
+  const [currentLesson, setCurrentLesson] = useState(1);
+
+  // Pyodide y ejecución
+  const pyodideRef = useRef<PyodideInterface | null>(null);
+  const isExecutingRef = useRef(false);
+
+  // Root y mensaje actual de la ventana de salida
+  const outputRootRef = useRef<Root | null>(null);
+  const outputMessageRef = useRef<string>('⏳ Cargando intérprete de Python...');
+
+  // Helper para actualizar la ventana de salida
+  const updateOutput = useCallback((msg: string) => {
+    outputMessageRef.current = msg;
+    const root = outputRootRef.current;
+    if (root) {
+      root.render(<CodeOutput output={msg} />);
+    }
+  }, []);
+
+  // Cargar tópico desde la tabla plantilla
+    useEffect(() => {
+    let mounted = true;
+
+    async function loadTopic() {
+      try {
+        setLoadingTopic(true);
+        const plantillas = await getPlantillas();
+
+        if (!mounted) return;
+
+        const idNum = plantillaId ? Number(plantillaId) : NaN;
+        const selected =
+          plantillas.find((p: any) => p.id_plantilla === idNum) ??
+          plantillas[0];
+
+        if (!selected) {
+          toast.error('No se encontró ninguna plantilla para este tópico');
+          setTopic(null);
+          return;
+        }
+
+        // 👈 AQUÍ: guardar el id de la plantilla seleccionada
+        setSelectedPlantillaId(selected.id_plantilla);
+
+        // Interpretamos plantilla.json como Topic
+        let json = selected.json as any;
+        if (!json || typeof json !== 'object') {
+          json = {};
+        }
+
+        const topicFromJson: Topic = {
+          id: String(json.id ?? selected.id_plantilla),
+          title: json.title ?? selected.nombre ?? 'Tópico sin título',
+          variant: json.variant ?? 'basic',
+          blocks: Array.isArray(json.blocks) ? json.blocks : [],
+        };
+
+        if (!topicFromJson.blocks || topicFromJson.blocks.length === 0) {
+          topicFromJson.blocks = [
+            {
+              id: 'fallback-1',
+              type: 'text',
+              content:
+                'Esta plantilla no tiene bloques configurados aún.',
+            },
+          ];
+        }
+
+        setTopic(topicFromJson);
+      } catch (error) {
+        console.error('Error cargando plantilla para tópico:', error);
+        toast.error('Error al cargar el tópico');
+        setTopic(null);
+      } finally {
+        if (mounted) {
+          setLoadingTopic(false);
+        }
+      }
+    }
+
+    loadTopic();
+
+    return () => {
+      mounted = false;
+    };
+  }, [plantillaId]);
+
+
+  // Cargar Pyodide al montar el componente
+  useEffect(() => {
+    const loadPyodideInstance = async () => {
+      try {
+        updateOutput('⏳ Cargando intérprete de Python...');
+        const pyodideInstance = await window.loadPyodide({
+          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
+        });
+        pyodideRef.current = pyodideInstance;
+        updateOutput(
+          '✓ Intérprete de Python listo. Ejecuta un bloque de código para comenzar.',
+        );
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Error desconocido';
+        updateOutput(`✗ Error al cargar Python: ${errorMessage}`);
+      }
+    };
+
+    loadPyodideInstance();
+  }, [updateOutput]);
+
+  // Navegación de lecciones
+  const handlePrevious = () => {
+    if (currentLesson > 1) {
+      setCurrentLesson(currentLesson - 1);
+    }
+  };
+
+  const handleNext = () => {
+    const totalLessons = 10;
+    if (currentLesson < totalLessons) {
+      setCurrentLesson(currentLesson + 1);
+    }
+  };
+
+  // Inicialización de Golden Layout (depende de que tengamos topic)
+  useEffect(() => {
+    if (!containerRef.current || !topic) return;
+
+    const layout = new GoldenLayout(containerRef.current);
+
+    const getBlock = (blockId: string) =>
+      topic.blocks.find((b) => b.id === blockId);
+
+    // 1) Bloque de texto
+    layout.registerComponentFactoryFunction(
+      'text-block',
+      (container: ComponentContainer, state: JsonValue | undefined) => {
+        const blockState = asBlockState(state);
+        if (!blockState) return;
+
+        const block = getBlock(blockState.blockId);
+        if (!block) return;
+
+        const host = document.createElement('div');
+        container.element.append(host);
+        const root = createRoot(host);
+
+        root.render(<TextBlock content={block.content} />);
+
+        container.on('destroy', () => {
+          root.unmount();
+        });
+      },
+    );
+
+    // 2) Bloque de código (con Pyodide integrado)
+    layout.registerComponentFactoryFunction(
+      'code-block',
+      (container: ComponentContainer, state: JsonValue | undefined) => {
+        const blockState = asBlockState(state);
+        if (!blockState) return;
+
+        const block = getBlock(blockState.blockId);
+        if (!block) return;
+
+        const host = document.createElement('div');
+        container.element.append(host);
+        const root = createRoot(host);
+
+        const executeCode = async (code: string) => {
+          const pyodide = pyodideRef.current;
+          if (!pyodide || isExecutingRef.current) return;
+
+          isExecutingRef.current = true;
+          updateOutput('⏳ Ejecutando código...');
+
+          try {
+            await pyodide.runPythonAsync(
+              `
+import sys
+from io import StringIO
+sys.stdout = StringIO()
+`,
+            );
+
+            await pyodide.runPythonAsync(code);
+            const stdout = await pyodide.runPythonAsync(
+              'sys.stdout.getvalue()',
+            );
+
+            if (stdout && stdout.trim()) {
+              updateOutput(`✓ Código ejecutado correctamente\n\n${stdout}`);
+            } else {
+              updateOutput(
+                '✓ Código ejecutado correctamente\n\n(Sin salida)',
+              );
+            }
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error ? error.message : 'Error desconocido';
+            updateOutput(`✗ Error de Python:\n\n${errorMessage}`);
+          } finally {
+            isExecutingRef.current = false;
+          }
+        };
+
+        root.render(
+          <CodeBlock
+            content={block.content}
+            language={block.language}
+            blockId={block.id}
+            onExecute={executeCode}
+            isExecuting={isExecutingRef.current}
+          />,
+        );
+
+        container.on('destroy', () => {
+          root.unmount();
+        });
+      },
+    );
+
+    // 3) Bloque de diapositivas
+    layout.registerComponentFactoryFunction(
+      'slides-block',
+      (container: ComponentContainer, state: JsonValue | undefined) => {
+        const blockState = asBlockState(state);
+        if (!blockState) return;
+
+        const block = getBlock(blockState.blockId);
+        if (!block) return;
+
+        const host = document.createElement('div');
+        container.element.append(host);
+        const root = createRoot(host);
+
+        root.render(<PdfBlock content={block.content} />);
+
+        container.on('destroy', () => {
+          root.unmount();
+        });
+      },
+    );
+
+    // 4) Bloque de video
+    layout.registerComponentFactoryFunction(
+      'video-block',
+      (container: ComponentContainer, state: JsonValue | undefined) => {
+        const blockState = asBlockState(state);
+        if (!blockState) return;
+
+        const block = getBlock(blockState.blockId);
+        if (!block) return;
+
+        const host = document.createElement('div');
+        container.element.append(host);
+        const root = createRoot(host);
+
+        root.render(
+          <VideoBlock
+            urlOrId={block.content}
+            title={topic.title || 'Video'}
+          />,
+        );
+
+        container.on('destroy', () => {
+          root.unmount();
+        });
+      },
+    );
+
+    // 5) Bloque de salida de código
+    layout.registerComponentFactoryFunction(
+      'output-block',
+      (container: ComponentContainer) => {
+        const host = document.createElement('div');
+        container.element.append(host);
+        const root = createRoot(host);
+
+        outputRootRef.current = root;
+
+        root.render(
+          <CodeOutput output={outputMessageRef.current} />,
+        );
+
+        container.on('destroy', () => {
+          root.unmount();
+          if (outputRootRef.current === root) {
+            outputRootRef.current = null;
+          }
+        });
+      },
+    );
+
+    // Config básico del layout (puedes hacerlo dinámico según topic.blocks si quieres)
+    const layoutConfig: LayoutConfig = {
+      root: {
+        type: 'column',
+        content: [
+          {
+            type: 'row',
+            content: [
+              {
+                type: 'column',
+                content: [
+                  {
+                    type: 'component',
+                    componentType: 'text-block',
+                    title: 'Teoría',
+                    componentState: { blockId: topic.blocks[0]?.id ?? 'fallback-1' },
+                  },
+                  {
+                    type: 'stack',
+                    content: [
+                      ...(topic.blocks.find((b) => b.type === 'code')
+                        ? [
+                            {
+                              type: 'component',
+                              componentType: 'code-block',
+                              title: 'Código',
+                              componentState: {
+                                blockId:
+                                  topic.blocks.find((b) => b.type === 'code')
+                                    ?.id ?? '',
+                              },
+                            } as const,
+                          ]
+                        : []),
+                      {
+                        type: 'component',
+                        componentType: 'output-block',
+                        title: 'Salida de código',
+                        componentState: {},
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: 'stack',
+                content: [
+                  ...(topic.blocks.find((b) => b.type === 'slides')
+                    ? [
+                        {
+                          type: 'component',
+                          componentType: 'slides-block',
+                          title: 'Diapositivas',
+                          componentState: {
+                            blockId:
+                              topic.blocks.find((b) => b.type === 'slides')
+                                ?.id ?? '',
+                          },
+                        } as const,
+                      ]
+                    : []),
+                  ...(topic.blocks.find((b) => b.type === 'video')
+                    ? [
+                        {
+                          type: 'component',
+                          componentType: 'video-block',
+                          title: 'Video',
+                          componentState: {
+                            blockId:
+                              topic.blocks.find((b) => b.type === 'video')
+                                ?.id ?? '',
+                          },
+                        } as const,
+                      ]
+                    : []),
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    layout.loadLayout(layoutConfig);
+
+    return () => {
+      layout.destroy();
+    };
+  }, [topic, updateOutput]);
+
+  if (loadingTopic) {
+    return (
+      <div className="topic-lesson-container">
+        <div className="topic-lesson-wrapper">
+          <p>Cargando tópico...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!topic) {
+    return (
+      <div className="topic-lesson-container">
+        <div className="topic-lesson-wrapper">
+          <p>No se pudo cargar el tópico.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="topic-lesson-container">
       <div className="topic-lesson-wrapper">
-        <TopicHeader title={mockTopic.title} lessonNumber={currentLesson} />
+        <div className="flex items-center justify-between mb-2">
+          <TopicHeader title={topic.title} lessonNumber={currentLesson} />
 
+          {selectedPlantillaId && (
+            <button
+              type="button"
+              onClick={() => navigate(`/topic/editor/${selectedPlantillaId}`)}
+              className="rounded bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
+            >
+              Editar plantilla
+            </button>
+          )}
+        </div>
+
+        {/* GoldenLayout */}
         <div
           className="topic-golden-layout-container"
           style={{
@@ -695,11 +783,10 @@ function CommentSection({ topicId }: { topicId: string }) {
         />
 
         <div className="mt-10">
-          <CommentSection topicId={mockTopic.id} />
+          <CommentSection topicId={topic.id} />
         </div>
-
       </div>
     </div>
   );
-}
 
+}

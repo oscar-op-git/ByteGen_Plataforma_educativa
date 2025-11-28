@@ -72,6 +72,9 @@ function App() {
           }
         />
         <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/topic/layout/:plantillaId" element={<TopicoGoldenLayout />} />
+        <Route path="/topic/editor/:plantillaId" element={<TopicoEditorLayout />} />
+
       </Routes>
     </Router>
   );
