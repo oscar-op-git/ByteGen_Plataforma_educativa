@@ -116,8 +116,9 @@ const Home: React.FC = () => {
 
   const onEnterCourse = useCallback((id: string) => {
     toast(`Entrando al bloque ${id}`);
-    navigate("/topic/layout");
+    navigate(`/topic/layout/${id}`);
   }, [navigate]);
+
 
   const onToggleHidden = useCallback((id: string) => {
     setCourses((prev) => 
