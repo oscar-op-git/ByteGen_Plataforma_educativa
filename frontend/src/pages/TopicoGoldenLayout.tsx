@@ -7,7 +7,7 @@ import {
   type JsonValue,
 } from 'golden-layout';
 
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import type { Topic } from '../types/topic.types';
@@ -25,7 +25,7 @@ import LessonNavigation from '../components/BotonesNavegacion';
 import '../styles/Topico.css';
 import 'golden-layout/dist/css/goldenlayout-base.css';
 import 'golden-layout/dist/css/themes/goldenlayout-light-theme.css';
-import { useNavigate } from 'react-router-dom'; // 👈 NUEVO
+
 // --- Tipos para el state de Golden Layout ---
 type BlockState = {
   blockId: string;
@@ -324,13 +324,12 @@ function CommentSection({ topicId }: { topicId: string }) {
 // -----------------------------
 
 export default function TopicoGoldenLayout() {
-  const navigate = useNavigate(); // 👈 para navegar al editor
-  const [selectedPlantillaId, setSelectedPlantillaId] = useState<number | null>(null);
-  
+  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  
+
   const { plantillaId } = useParams<{ plantillaId?: string }>();
 
+  const [selectedPlantillaId, setSelectedPlantillaId] = useState<number | null>(null);
   const [topic, setTopic] = useState<Topic | null>(null);
   const [loadingTopic, setLoadingTopic] = useState(true);
 
@@ -355,7 +354,7 @@ export default function TopicoGoldenLayout() {
   }, []);
 
   // Cargar tópico desde la tabla plantilla
-    useEffect(() => {
+  useEffect(() => {
     let mounted = true;
 
     async function loadTopic() {
@@ -376,7 +375,7 @@ export default function TopicoGoldenLayout() {
           return;
         }
 
-        // 👈 AQUÍ: guardar el id de la plantilla seleccionada
+        // Guardamos el id de la plantilla seleccionada (para el botón Editar)
         setSelectedPlantillaId(selected.id_plantilla);
 
         // Interpretamos plantilla.json como Topic
@@ -421,7 +420,6 @@ export default function TopicoGoldenLayout() {
       mounted = false;
     };
   }, [plantillaId]);
-
 
   // Cargar Pyodide al montar el componente
   useEffect(() => {
@@ -629,7 +627,83 @@ sys.stdout = StringIO()
       },
     );
 
-    // Config básico del layout (puedes hacerlo dinámico según topic.blocks si quieres)
+    // --- Construcción dinámica del layout según los bloques ---
+
+    const textBlocks = topic.blocks.filter((b) => b.type === 'text');
+    const codeBlock = topic.blocks.find((b) => b.type === 'code');
+    const slidesBlock = topic.blocks.find((b) => b.type === 'slides');
+    const videoBlock = topic.blocks.find((b) => b.type === 'video');
+
+    const firstBlockId = (topic.blocks[0] && topic.blocks[0].id) || 'fallback-1';
+
+    // Left column: textos (uno o varios) + código/salida
+    const leftColumnContent: any[] = [];
+
+    if (textBlocks.length > 0) {
+      // Stack de todas las ventanas de texto como tabs
+      leftColumnContent.push({
+        type: 'stack',
+        content: textBlocks.map((b, index) => ({
+          type: 'component',
+          componentType: 'text-block',
+          title: b.id || `Texto ${index + 1}`,
+          componentState: { blockId: b.id },
+        })),
+      });
+    } else {
+      // Fallback a un solo text-block
+      leftColumnContent.push({
+        type: 'component',
+        componentType: 'text-block',
+        title: 'Teoría',
+        componentState: { blockId: firstBlockId },
+      });
+    }
+
+    // Stack de código + salida de código
+    leftColumnContent.push({
+      type: 'stack',
+      content: [
+        ...(codeBlock
+          ? [
+              {
+                type: 'component',
+                componentType: 'code-block',
+                title: 'Código',
+                componentState: { blockId: codeBlock.id },
+              } as const,
+            ]
+          : []),
+        {
+          type: 'component',
+          componentType: 'output-block',
+          title: 'Salida de código',
+          componentState: {},
+        },
+      ],
+    });
+
+    // Right column: slides y/o video
+    const rightStackContent: any[] = [];
+
+    if (slidesBlock) {
+      rightStackContent.push({
+        type: 'component',
+        componentType: 'slides-block',
+        title: 'Diapositivas',
+        componentState: { blockId: slidesBlock.id },
+      });
+    }
+
+    if (videoBlock) {
+      rightStackContent.push({
+        type: 'component',
+        componentType: 'video-block',
+        title: 'Video',
+        componentState: { blockId: videoBlock.id },
+      });
+    }
+
     const layoutConfig: LayoutConfig = {
       root: {
         type: 'column',
@@ -639,72 +713,11 @@ sys.stdout = StringIO()
             content: [
               {
                 type: 'column',
-                content: [
-                  {
-                    type: 'component',
-                    componentType: 'text-block',
-                    title: 'Teoría',
-                    componentState: { blockId: topic.blocks[0]?.id ?? 'fallback-1' },
-                  },
-                  {
-                    type: 'stack',
-                    content: [
-                      ...(topic.blocks.find((b) => b.type === 'code')
-                        ? [
-                            {
-                              type: 'component',
-                              componentType: 'code-block',
-                              title: 'Código',
-                              componentState: {
-                                blockId:
-                                  topic.blocks.find((b) => b.type === 'code')
-                                    ?.id ?? '',
-                              },
-                            } as const,
-                          ]
-                        : []),
-                      {
-                        type: 'component',
-                        componentType: 'output-block',
-                        title: 'Salida de código',
-                        componentState: {},
-                      },
-                    ],
-                  },
-                ],
+                content: leftColumnContent,
               },
               {
                 type: 'stack',
-                content: [
-                  ...(topic.blocks.find((b) => b.type === 'slides')
-                    ? [
-                        {
-                          type: 'component',
-                          componentType: 'slides-block',
-                          title: 'Diapositivas',
-                          componentState: {
-                            blockId:
-                              topic.blocks.find((b) => b.type === 'slides')
-                                ?.id ?? '',
-                          },
-                        } as const,
-                      ]
-                    : []),
-                  ...(topic.blocks.find((b) => b.type === 'video')
-                    ? [
-                        {
-                          type: 'component',
-                          componentType: 'video-block',
-                          title: 'Video',
-                          componentState: {
-                            blockId:
-                              topic.blocks.find((b) => b.type === 'video')
-                                ?.id ?? '',
-                          },
-                        } as const,
-                      ]
-                    : []),
-                ],
+                content: rightStackContent,
               },
             ],
           },
@@ -756,7 +769,6 @@ sys.stdout = StringIO()
           )}
         </div>
 
-        {/* GoldenLayout */}
         <div
           className="topic-golden-layout-container"
           style={{
@@ -788,5 +800,4 @@ sys.stdout = StringIO()
       </div>
     </div>
   );
-
 }
