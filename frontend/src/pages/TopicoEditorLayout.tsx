@@ -12,7 +12,10 @@ import {
   type ComponentContainer,
   type JsonValue,
 } from 'golden-layout';
+
 import { DndContext, type DragEndEvent, useDroppable, useDraggable } from '@dnd-kit/core';
+
+import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import CodeBlock from '../components/BloqueCodigo';
@@ -22,15 +25,15 @@ import TopicHeader from '../components/EncabezadoTopico';
 import CodeOutput from '../components/SalidaCodigo';
 import LessonNavigation from '../components/BotonesNavegacion';
 
+import type { Topic, ContentBlock } from '../types/topic.types';
+
 import '../styles/Topico.css';
 import 'golden-layout/dist/css/goldenlayout-base.css';
 import 'golden-layout/dist/css/themes/goldenlayout-light-theme.css';
-import { useParams } from 'react-router-dom';
 
-import type { Topic, ContentBlock } from '../types/topic.types';
-
-// URL base del backend
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// ---------------- Config API ----------------
+const API_BASE =
+  import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // ---------------- Tipos base ----------------
 
@@ -46,7 +49,7 @@ interface PanelSettings {
 interface EditorPanel {
   id: string;
   title: string;
-  type: PanelType | null;
+  type: PanelType | null; // tipo de recurso asignado (vacío al inicio)
   settings: PanelSettings;
 }
 
@@ -222,11 +225,14 @@ function PanelCard({ panel, onTitleChange }: PanelCardProps) {
   );
 }
 
-// ---------------- Helper: construir Topic desde panels ----------------
+// ---------------- Helpers Topic <-> Panels ----------------
 
-function buildTopicFromPanels(panels: EditorPanel[]): Topic {
+function buildTopicFromPanels(
+  panels: EditorPanel[],
+  title: string,
+): Topic {
   const blocks: ContentBlock[] = panels
-    .filter((p) => p.type && p.type !== 'output')
+    .filter((p) => p.type && p.type !== 'output') // ignoramos paneles solo de salida
     .map((p) => {
       if (p.type === 'text') {
         return {
@@ -259,6 +265,7 @@ function buildTopicFromPanels(panels: EditorPanel[]): Topic {
           content: p.settings.videoUrl ?? '',
         };
       }
+      // fallback
       return {
         id: p.id,
         type: 'text' as const,
@@ -267,22 +274,74 @@ function buildTopicFromPanels(panels: EditorPanel[]): Topic {
     });
 
   return {
-    id: 'topic-1',           // Backend puede ignorar esto o usarlo
-    title: 'Tópico sin título', // Luego puedes agregar un input de título
-    variant: 'basic',
+    id: 'topic-1',             // el backend no usa este id para la BD
+    title: title || 'Tópico sin título',
+    variant: 'basic',          // podrías inferirla según tipos de bloque
     blocks,
   };
+}
+
+function buildPanelsFromTopic(topic: Topic): EditorPanel[] {
+  if (!topic.blocks || topic.blocks.length === 0) {
+    return [
+      {
+        id: 'panel-1',
+        title: '',
+        type: null,
+        settings: {},
+      },
+    ];
+  }
+
+  return topic.blocks.map((b, index) => {
+    const base: EditorPanel = {
+      id: b.id ?? `panel-${index + 1}`,
+      title: b.type === 'text'
+        ? `Texto ${index + 1}`
+        : b.type === 'code'
+        ? `Código ${index + 1}`
+        : b.type === 'slides'
+        ? `Diapositivas ${index + 1}`
+        : b.type === 'video'
+        ? `Video ${index + 1}`
+        : `Bloque ${index + 1}`,
+      type: b.type as PanelType,
+      settings: {},
+    };
+
+    if (b.type === 'text') {
+      base.settings.textContent = b.content ?? '';
+    } else if (b.type === 'code') {
+      base.settings.codeContent = b.content ?? '';
+    } else if (b.type === 'slides') {
+      try {
+        const parsed = JSON.parse(b.content ?? '{}');
+        base.settings.pdfUrl = parsed.pdfUrl ?? '';
+      } catch {
+        base.settings.pdfUrl = '';
+      }
+    } else if (b.type === 'video') {
+      base.settings.videoUrl = b.content ?? '';
+    }
+
+    return base;
+  });
 }
 
 // ---------------- Componente principal: modo editor ----------------
 
 export default function TopicoEditorLayout() {
   const { plantillaId } = useParams<{ plantillaId?: string }>();
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const goldenLayoutRef = useRef<GoldenLayout | null>(null);
 
   // Estado de navegación
   const [currentLesson, setCurrentLesson] = useState(1);
+
+  // Estado de "metadatos" de la plantilla/tópico
+  const [plantillaName, setPlantillaName] = useState('');
+  const [topicTitle, setTopicTitle] = useState('Tópico sin título');
 
   // Lista dinámica de paneles
   const [panels, setPanels] = useState<EditorPanel[]>([
@@ -300,78 +359,11 @@ export default function TopicoEditorLayout() {
     panelsRef.current = panels;
   }, [panels]);
 
-  useEffect(() => {
-  // Si no hay ID en la URL, estamos en modo "crear nueva plantilla"
-  if (!plantillaId) return;
-
-  const loadPlantilla = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/plantillas/${plantillaId}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        const txt = await res.text();
-        toast.error(txt || 'No se pudo cargar la plantilla');
-        return;
-      }
-
-      const data = await res.json();
-      const json = data.json as Topic;
-
-      const blocks = Array.isArray(json.blocks) ? json.blocks : [];
-
-      const newPanels: EditorPanel[] = blocks.map((block, index) => {
-        const base: EditorPanel = {
-          id: `panel-${index + 1}`,
-          title: block.id || `Bloque ${index + 1}`,
-          type: block.type as PanelType,
-          settings: {},
-        };
-
-        if (block.type === 'text') {
-          base.settings.textContent = block.content;
-        } else if (block.type === 'code') {
-          base.settings.codeContent = block.content;
-        } else if (block.type === 'slides') {
-          // Intentar extraer pdfUrl del JSON que viene en content
-          try {
-            const parsed = JSON.parse(block.content || '{}');
-            if (parsed.pdfUrl) {
-              base.settings.pdfUrl = parsed.pdfUrl;
-            }
-          } catch {
-            // si no se puede parsear, lo dejamos vacío
-          }
-        } else if (block.type === 'video') {
-          base.settings.videoUrl = block.content;
-        }
-
-        return base;
-      });
-
-      if (newPanels.length === 0) {
-        toast('La plantilla no tiene bloques, se mantiene el panel vacío');
-        return;
-      }
-
-      setPanels(newPanels);
-      toast.success('Plantilla cargada en el editor');
-    } catch (error) {
-      console.error('Error cargando plantilla:', error);
-      toast.error('Error al cargar la plantilla');
-    }
-  };
-
-  loadPlantilla();
-}, [plantillaId]);
-
-
   // Pyodide y salida de código
   const pyodideRef = useRef<PyodideInterface | null>(null);
   const isExecutingRef = useRef(false);
 
+  // Varios paneles pueden ser de tipo "output"
   const outputRootsRef = useRef<Root[]>([]);
   const outputMessageRef = useRef<string>('⏳ Cargando intérprete de Python...');
 
@@ -405,6 +397,41 @@ export default function TopicoEditorLayout() {
     loadPyodideInstance();
   }, [updateOutput]);
 
+  // Si venimos con /topic/editor/:plantillaId, cargamos la plantilla existente
+  useEffect(() => {
+    if (!plantillaId) return;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/plantillas/${plantillaId}`, {
+          credentials: 'include',
+        });
+
+        if (!res.ok) {
+          throw new Error(`Error al cargar plantilla (${res.status})`);
+        }
+
+        const data = await res.json();
+
+        const json = (data.json ?? {}) as any;
+
+        const topic: Topic = {
+          id: String(json.id ?? data.id_plantilla),
+          title: json.title ?? data.nombre ?? 'Tópico sin título',
+          variant: json.variant ?? 'basic',
+          blocks: Array.isArray(json.blocks) ? json.blocks : [],
+        };
+
+        setPlantillaName(data.nombre ?? '');
+        setTopicTitle(topic.title);
+        setPanels(buildPanelsFromTopic(topic));
+      } catch (err: any) {
+        console.error('Error cargando plantilla en editor:', err);
+        toast.error(err?.message || 'No se pudo cargar la plantilla');
+      }
+    })();
+  }, [plantillaId]);
+
   // Navegación de lecciones
   const handlePrevious = () => {
     if (currentLesson > 1) {
@@ -419,7 +446,7 @@ export default function TopicoEditorLayout() {
     }
   };
 
-  // Añadir un nuevo panel
+  // Añadir un nuevo panel vacío
   const handleAddPanel = () => {
     setPanels((prev) => {
       const nextIndex = prev.length + 1;
@@ -435,7 +462,7 @@ export default function TopicoEditorLayout() {
     });
   };
 
-  // Cambiar nombre de panel
+  // Cambiar el nombre de un panel
   const handlePanelTitleChange = (panelId: string, newTitle: string) => {
     setPanels((prev) =>
       prev.map((p) =>
@@ -444,13 +471,13 @@ export default function TopicoEditorLayout() {
     );
   };
 
-  // DnD: asignar tipo
+  // DnD: asignar tipo de recurso a un panel
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
 
-    const draggedId = active.id.toString();
-    const panelId = over.id.toString();
+    const draggedId = active.id.toString(); // "res-text"
+    const panelId = over.id.toString(); // "panel-1", "panel-2", etc.
 
     if (!draggedId.startsWith('res-')) return;
 
@@ -463,7 +490,7 @@ export default function TopicoEditorLayout() {
     );
   };
 
-  // LayoutConfig a partir de panels
+  // Construir LayoutConfig a partir de los paneles
   const buildLayoutConfig = useCallback(
     (currentPanels: EditorPanel[]): LayoutConfig => {
       const panelComponents = currentPanels.map((panel) => ({
@@ -493,15 +520,14 @@ export default function TopicoEditorLayout() {
     [],
   );
 
-
-  
-  // Inicializar Golden Layout
+  // Inicializar Golden Layout una vez
   useEffect(() => {
     if (!containerRef.current) return;
 
     const layout = new GoldenLayout(containerRef.current);
     goldenLayoutRef.current = layout;
 
+    // Componente genérico de panel
     layout.registerComponentFactoryFunction(
       'panel',
       (container: ComponentContainer, state: JsonValue | undefined) => {
@@ -515,6 +541,7 @@ export default function TopicoEditorLayout() {
         const root = createRoot(host);
 
         if (!panel || !panel.type) {
+          // Ventana sin tipo
           root.render(
             <div style={{ padding: 8, fontSize: 12 }}>
               Esta ventana aún no tiene tipo de recurso asignado.
@@ -523,6 +550,7 @@ export default function TopicoEditorLayout() {
             </div>,
           );
         } else if (panel.type === 'text') {
+          // Editor de texto dentro de la ventana
           root.render(
             <div style={{ padding: 8, fontSize: 12, height: '100%' }}>
               <div style={{ marginBottom: 4, fontWeight: 600 }}>
@@ -558,6 +586,7 @@ export default function TopicoEditorLayout() {
             </div>,
           );
         } else if (panel.type === 'code') {
+          // Editor de código con Pyodide
           const executeCode = async (code: string) => {
             const pyodide = pyodideRef.current;
             if (!pyodide || isExecutingRef.current) return;
@@ -612,6 +641,7 @@ sys.stdout = StringIO()
             />,
           );
         } else if (panel.type === 'slides') {
+          // Editor de slides: estilo "arrastrar o examinar archivos"
           root.render(
             <div style={{ padding: 8, fontSize: 12, height: '100%' }}>
               <div style={{ marginBottom: 4, fontWeight: 600 }}>
@@ -687,6 +717,7 @@ sys.stdout = StringIO()
             </div>,
           );
         } else if (panel.type === 'video') {
+          // Editor de video: URL + vista previa
           root.render(
             <div style={{ padding: 8, fontSize: 12, height: '100%' }}>
               <div style={{ marginBottom: 4, fontWeight: 600 }}>
@@ -752,6 +783,7 @@ sys.stdout = StringIO()
             </div>,
           );
         } else if (panel.type === 'output') {
+          // Panel de salida de código (como recurso)
           outputRootsRef.current.push(root);
 
           root.render(
@@ -765,7 +797,7 @@ sys.stdout = StringIO()
             );
           });
 
-          return;
+          return; // importante salir aquí para no registrar destroy dos veces
         }
 
         container.on('destroy', () => {
@@ -783,31 +815,41 @@ sys.stdout = StringIO()
     };
   }, [buildLayoutConfig, updateOutput]);
 
-  // Recargar layout cuando cambian los panels
+  // Recargar layout cuando cambian los paneles
   useEffect(() => {
     const layout = goldenLayoutRef.current;
     if (!layout) return;
+
     const config = buildLayoutConfig(panels);
     layout.loadLayout(config);
   }, [panels, buildLayoutConfig]);
 
-  // --- AQUÍ VIENE EL BOTÓN DE GUARDAR PLANTILLA ---
-
+  // Guardar plantilla (crear o actualizar)
   const handleSavePlantilla = async () => {
-    const topicJson = buildTopicFromPanels(panelsRef.current);
+    const topicJson = buildTopicFromPanels(panelsRef.current, topicTitle);
+
+    const payload = {
+      nombre: plantillaName || topicTitle || 'Plantilla sin nombre',
+      es_borrador: false,
+      json: topicJson,
+    };
+
+    const isEditing = Boolean(plantillaId);
+
+    const url = isEditing
+      ? `${API_BASE}/api/plantillas/${plantillaId}`
+      : `${API_BASE}/api/plantillas`;
+
+    const method = isEditing ? 'PATCH' : 'POST';
 
     try {
-      const res = await fetch(`${API_BASE}/api/plantillas`, {
-        method: 'POST',
+      const res = await fetch(url, {
+        method,
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          nombre: topicJson.title,
-          es_borrador: false,
-          json: topicJson,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -815,7 +857,7 @@ sys.stdout = StringIO()
         throw new Error(txt || 'Error al guardar plantilla');
       }
 
-      toast.success('Plantilla guardada correctamente');
+      toast.success(isEditing ? 'Plantilla actualizada' : 'Plantilla creada');
     } catch (err: any) {
       console.error('Error guardando plantilla', err);
       toast.error(err?.message || 'No se pudo guardar la plantilla');
@@ -845,6 +887,31 @@ sys.stdout = StringIO()
 
             {/* Panel de edición */}
             <div className="flex w-80 flex-col gap-4">
+              {/* Metadatos de la plantilla */}
+              <div className="flex flex-col gap-2 rounded border bg-white p-2">
+                <label className="text-[11px] font-semibold text-slate-700">
+                  Nombre de la plantilla (para la BD / lista)
+                </label>
+                <input
+                  type="text"
+                  value={plantillaName}
+                  onChange={(e) => setPlantillaName(e.target.value)}
+                  placeholder="Ej: Tema 1 - Lectura introductoria"
+                  className="w-full rounded border px-1 py-[4px] text-[12px]"
+                />
+
+                <label className="mt-2 text-[11px] font-semibold text-slate-700">
+                  Título del tópico (lo que verá el estudiante)
+                </label>
+                <input
+                  type="text"
+                  value={topicTitle}
+                  onChange={(e) => setTopicTitle(e.target.value)}
+                  placeholder="Ej: Introducción a Python"
+                  className="w-full rounded border px-1 py-[4px] text-[12px]"
+                />
+              </div>
+
               <button
                 type="button"
                 onClick={handleAddPanel}
@@ -853,13 +920,12 @@ sys.stdout = StringIO()
                 + Añadir ventana
               </button>
 
-              {/* BOTÓN GUARDAR PLANTILLA AQUÍ */}
               <button
                 type="button"
                 onClick={handleSavePlantilla}
                 className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
               >
-                Guardar plantilla
+                {plantillaId ? 'Guardar cambios en plantilla' : 'Guardar nueva plantilla'}
               </button>
 
               <EditorResourceList />
