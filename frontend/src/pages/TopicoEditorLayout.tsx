@@ -31,6 +31,13 @@ import '../styles/Topico.css';
 import 'golden-layout/dist/css/goldenlayout-base.css';
 import 'golden-layout/dist/css/themes/goldenlayout-light-theme.css';
 
+import { getSession } from '../services/authService';
+import {
+  fetchCommentForPlantilla,
+  postMainCommentApi,
+  postReplyApi,
+} from "../services/commentService";
+
 // ---------------- Config API ----------------
 const API_BASE =
   import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -863,6 +870,298 @@ sys.stdout = StringIO()
       toast.error(err?.message || 'No se pudo guardar la plantilla');
     }
   };
+  //-------------------Seccion comentarios-----------------------
+  type UserSession = {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+    isAdmin?: boolean;
+    roleId?: number | null;
+    roleName?: string | null;
+  };
+
+
+  type Comment = {
+    id: string;
+    authorName: string;
+    authorRole?: number;
+    content: string;
+    createdAt: string;
+    replies: Array<{
+      id: string;
+      authorName: string;
+      authorRole?: number;
+      content: string;
+      createdAt: string;
+    }>;
+  };
+
+function CommentSection({ topicId }: { topicId: string }) {
+  const [session, setSession] = useState<UserSession | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [mainText, setMainText] = useState('');
+  const [replyText, setReplyText] = useState('');
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+
+  const getErrorMessage = (err: unknown): string => {
+    if (err instanceof Error) return err.message;
+    if (typeof err === "string") return err;
+    return "Ocurrió un error inesperado.";
+  };
+
+  useEffect(() => {
+    console.log("[CommentSection] session:", session);
+  }, [session]);
+
+  const ALLOWED_ROLES = [1, 2, 4]; // Ejemplo: 1 = Admin, 3 = Docente
+
+
+    useEffect(() => {
+      ;(async () => {
+        try {
+          const s = await getSession();
+          setSession(s?.user ?? null);
+        } catch {
+          setSession(null);
+        }
+      })();
+
+      (async () => {
+        try {
+          const data = await fetchCommentForPlantilla(topicId);
+          setComments(data ? [data] : []);
+        } catch (error: unknown) {
+          console.error("Error al cargar comentarios:", error);
+          setComments([]);
+        }
+      })();
+    }, [topicId]);
+
+
+
+  const userCanInteract = () => {
+    if (!session) {
+      console.log("[CommentSection] userCanInteract => false (no session)");
+      return false;
+    }
+
+    if (session.isAdmin) {
+      console.log("[CommentSection] userCanInteract => true (isAdmin)");
+      return true;
+    }
+
+    const r = session.roleId ?? undefined;
+    const can = r !== undefined && ALLOWED_ROLES.includes(r);
+
+    console.log("[CommentSection] roleId:", r, "allowed:", can);
+
+    return can;
+  };
+
+
+
+  const handlePostMain = async () => {
+    if (!userCanInteract() || !mainText.trim()) return;
+    if (comments.length > 0) {
+      alert(
+        "Ya existe un comentario principal. Solo se permiten respuestas al comentario principal."
+      );
+      return;
+    }
+
+    try {
+      const created = await postMainCommentApi(topicId, mainText.trim());
+
+      const newComment: Comment = {
+        id: created.id,
+        authorName: created.authorName,
+        content: created.content,
+        createdAt: created.createdAt,
+        replies: created.replies ?? [],
+      };
+
+      setComments([newComment]);
+      setMainText("");
+    } catch (error: unknown) {
+      alert(getErrorMessage(error));
+    }
+  };
+
+
+  const handlePostReply = async (parentId: string) => {
+    if (!userCanInteract() || !replyText.trim()) return;
+
+    try {
+      const created = await postReplyApi(parentId, replyText.trim());
+
+      const newReply = {
+        id: created.id,
+        authorName: created.authorName,
+        content: created.content,
+        createdAt: created.createdAt,
+      };
+
+      const next = comments.map((c) =>
+        c.id === parentId ? { ...c, replies: [...c.replies, newReply] } : c
+      );
+
+      setComments(next);
+      setReplyText("");
+      setReplyingToId(null);
+    } catch (error: unknown) {
+      alert(getErrorMessage(error));
+    }
+  };
+
+  const mainExists = comments.length > 0;
+
+  return (
+    <div className="mt-10 border-t border-gray-200 pt-6">
+      <h3 className="text-xl font-semibold mb-4">Comentarios</h3>
+
+      {!mainExists ? (
+        <div>
+          {userCanInteract() ? (
+            <div className="flex flex-col gap-2">
+              <label className="text-gray-700 font-medium">
+                Publicar comentario principal (solo 1 permitido)
+              </label>
+              <textarea
+                value={mainText}
+                onChange={(e) => setMainText(e.target.value)}
+                rows={4}
+                className="w-full p-2 border rounded-md focus:ring focus:ring-blue-300"
+                placeholder="Escribe aquí el comentario principal..."
+              />
+              <button
+                onClick={handlePostMain}
+                className="self-start bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition"
+              >
+                Publicar
+              </button>
+            </div>
+          ) : (
+            <div className="text-gray-600">
+              <p>
+                Solo usuarios con rol permitido pueden publicar el comentario
+                principal y responder.
+              </p>
+              <a
+                href="/login"
+                className="text-blue-600 hover:underline font-medium"
+              >
+                Inicia sesión
+              </a>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 space-y-6">
+          {comments.map((c) => (
+            <div
+              key={c.id}
+              className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-100"
+            >
+              <div className="flex justify-between items-center">
+                <div className="font-semibold text-gray-800">
+                  {c.authorName}{' '}
+                  {c.authorRole ? (
+                    <span className="text-sm text-gray-500">
+                      (rol {c.authorRole})
+                    </span>
+                  ) : null}
+                </div>
+                <span className="text-xs text-gray-400">
+                  {new Date(c.createdAt).toLocaleString()}
+                </span>
+              </div>
+
+              <p className="mt-2 text-gray-700 whitespace-pre-wrap">
+                {c.content}
+              </p>
+
+              {/* Respuestas */}
+              <div className="mt-4 border-t border-gray-200 pt-3">
+                <h4 className="font-medium text-gray-700">Respuestas</h4>
+                <div className="mt-2 space-y-3">
+                  {c.replies.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      Aún no hay respuestas.
+                    </p>
+                  ) : (
+                    c.replies.map((r) => (
+                      <div
+                        key={r.id}
+                        className="border border-gray-100 bg-white p-3 rounded-md shadow-sm"
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-gray-800">
+                            {r.authorName}{' '}
+                            {r.authorRole ? (
+                              <span className="text-sm text-gray-500">
+                                (rol {r.authorRole})
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(r.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-gray-700">{r.content}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Caja de respuesta */}
+                {userCanInteract() && (
+                  <div className="mt-3">
+                    {replyingToId === c.id ? (
+                      <div className="flex flex-col gap-2">
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          rows={3}
+                          className="w-full p-2 border rounded-md focus:ring focus:ring-blue-300"
+                          placeholder="Escribe tu respuesta..."
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handlePostReply(c.id)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition"
+                          >
+                            Enviar
+                          </button>
+                          <button
+                            onClick={() => {
+                              setReplyingToId(null);
+                              setReplyText('');
+                            }}
+                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md transition"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setReplyingToId(c.id)}
+                        className="mt-2 text-blue-600 hover:underline"
+                      >
+                        Responder
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
   return (
     <div className="topic-lesson-container">
@@ -946,6 +1245,11 @@ sys.stdout = StringIO()
             onNext={handleNext}
           />
         </div>
+        {plantillaId && (
+          <div className="mt-10">
+            <CommentSection topicId={plantillaId} />
+          </div>
+        )}
       </div>
     </div>
   );
