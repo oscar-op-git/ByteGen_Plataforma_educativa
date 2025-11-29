@@ -7,13 +7,6 @@ import {
   type JsonValue,
 } from 'golden-layout';
 
-import {
-  fetchCommentForPlantilla,
-  postMainCommentApi,
-  postReplyApi,
-} from "../services/commentService";
-
-
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -737,149 +730,17 @@ sys.stdout = StringIO()
     return () => {
       layout.destroy();
     };
-  }, [updateOutput]);
+  }, [topic, updateOutput]);
 
-  type UserSession = {
-    id: string;
-    email?: string | null;
-    name?: string | null;
-    isAdmin?: boolean;
-    roleId?: number | null;
-    roleName?: string | null;
-  };
-
-
-  type Comment = {
-    id: string;
-    authorName: string;
-    authorRole?: number;
-    content: string;
-    createdAt: string;
-    replies: Array<{
-      id: string;
-      authorName: string;
-      authorRole?: number;
-      content: string;
-      createdAt: string;
-    }>;
-  };
-
-function CommentSection({ topicId }: { topicId: string }) {
-  const [session, setSession] = useState<UserSession | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [mainText, setMainText] = useState('');
-  const [replyText, setReplyText] = useState('');
-  const [replyingToId, setReplyingToId] = useState<string | null>(null);
-
-  const getErrorMessage = (err: unknown): string => {
-    if (err instanceof Error) return err.message;
-    if (typeof err === "string") return err;
-    return "Ocurrió un error inesperado.";
-  };
-
-  useEffect(() => {
-    console.log("[CommentSection] session:", session);
-  }, [session]);
-
-  const ALLOWED_ROLES = [1, 2, 4]; // Ejemplo: 1 = Admin, 3 = Docente
-
-
-    useEffect(() => {
-      ;(async () => {
-        try {
-          const s = await getSession();
-          setSession(s?.user ?? null);
-        } catch {
-          setSession(null);
-        }
-      })();
-
-      (async () => {
-        try {
-          const data = await fetchCommentForPlantilla(topicId);
-          setComments(data ? [data] : []);
-        } catch (error: unknown) {
-          console.error("Error al cargar comentarios:", error);
-          setComments([]);
-        }
-      })();
-    }, [topicId]);
-
-
-
-  const userCanInteract = () => {
-    if (!session) {
-      console.log("[CommentSection] userCanInteract => false (no session)");
-      return false;
-    }
-
-    if (session.isAdmin) {
-      console.log("[CommentSection] userCanInteract => true (isAdmin)");
-      return true;
-    }
-
-    const r = session.roleId ?? undefined;
-    const can = r !== undefined && ALLOWED_ROLES.includes(r);
-
-    console.log("[CommentSection] roleId:", r, "allowed:", can);
-
-    return can;
-  };
-
-
-
-  const handlePostMain = async () => {
-    if (!userCanInteract() || !mainText.trim()) return;
-    if (comments.length > 0) {
-      alert(
-        "Ya existe un comentario principal. Solo se permiten respuestas al comentario principal."
-      );
-      return;
-    }
-
-    try {
-      const created = await postMainCommentApi(topicId, mainText.trim());
-
-      const newComment: Comment = {
-        id: created.id,
-        authorName: created.authorName,
-        content: created.content,
-        createdAt: created.createdAt,
-        replies: created.replies ?? [],
-      };
-
-      setComments([newComment]);
-      setMainText("");
-    } catch (error: unknown) {
-      alert(getErrorMessage(error));
-    }
-  };
-
-
-  const handlePostReply = async (parentId: string) => {
-    if (!userCanInteract() || !replyText.trim()) return;
-
-    try {
-      const created = await postReplyApi(parentId, replyText.trim());
-
-      const newReply = {
-        id: created.id,
-        authorName: created.authorName,
-        content: created.content,
-        createdAt: created.createdAt,
-      };
-
-      const next = comments.map((c) =>
-        c.id === parentId ? { ...c, replies: [...c.replies, newReply] } : c
-      );
-
-      setComments(next);
-      setReplyText("");
-      setReplyingToId(null);
-    } catch (error: unknown) {
-      alert(getErrorMessage(error));
-    }
-  };
+  if (loadingTopic) {
+    return (
+      <div className="topic-lesson-container">
+        <div className="topic-lesson-wrapper">
+          <p>Cargando tópico...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!topic) {
     return (
