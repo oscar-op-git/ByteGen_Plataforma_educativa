@@ -175,3 +175,70 @@
   width: 400px; /* base */
   text-align: center;
 }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .header-home {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    padding: 8px 12px;
+  }
+
+  .header-home__brand {
+    font-size: 20px;
+    text-align: left;
+    margin-bottom: 8px;
+  }
+
+  .header-home__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .header-home__link,
+  .header-home__btn,
+  .user-menu__trigger {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-home {
+    padding: 6px 10px;
+  }
+
+  .header-home__nav {
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  .header-home__nav > * {
+    flex: 0 0 auto; /* evitar que los botones se encojan y permitir scroll horizontal */
+  }
+
+  .header-home__brand {
+    font-size: 18px;
+  }
+
+  .user-menu__dropdown {
+    right: 6px;
+    min-width: 160px;
+  }
+}
+
+/* Small tweak: ensure menu and role-badge dropdowns fit on small screens */
+@media (max-width: 420px) {
+  .role-badge__menu,
+  .user-menu__dropdown {
+    left: 8px;
+    right: 8px;
+    min-width: auto;
+  }
+}
