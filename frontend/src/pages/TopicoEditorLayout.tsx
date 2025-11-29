@@ -13,7 +13,11 @@ import {
   type JsonValue,
 } from 'golden-layout';
 
-//import TextBlock from '../components/BloqueTexto';
+import { DndContext, type DragEndEvent, useDroppable, useDraggable } from '@dnd-kit/core';
+
+import { useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
+
 import CodeBlock from '../components/BloqueCodigo';
 import PdfBlock from '../components/BloqueDiapositivas';
 import VideoBlock from '../components/BloqueVideo';
@@ -21,11 +25,15 @@ import TopicHeader from '../components/EncabezadoTopico';
 import CodeOutput from '../components/SalidaCodigo';
 import LessonNavigation from '../components/BotonesNavegacion';
 
-import { DndContext, type DragEndEvent, useDroppable, useDraggable } from '@dnd-kit/core'
+import type { Topic, ContentBlock } from '../types/topic.types';
 
 import '../styles/Topico.css';
 import 'golden-layout/dist/css/goldenlayout-base.css';
 import 'golden-layout/dist/css/themes/goldenlayout-light-theme.css';
+
+// ---------------- Config API ----------------
+const API_BASE =
+  import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // ---------------- Tipos base ----------------
 
@@ -217,16 +225,125 @@ function PanelCard({ panel, onTitleChange }: PanelCardProps) {
   );
 }
 
+// ---------------- Helpers Topic <-> Panels ----------------
+
+function buildTopicFromPanels(
+  panels: EditorPanel[],
+  title: string,
+): Topic {
+  const blocks: ContentBlock[] = panels
+    .filter((p) => p.type && p.type !== 'output') // ignoramos paneles solo de salida
+    .map((p) => {
+      if (p.type === 'text') {
+        return {
+          id: p.id,
+          type: 'text' as const,
+          content: p.settings.textContent ?? '',
+        };
+      }
+      if (p.type === 'code') {
+        return {
+          id: p.id,
+          type: 'code' as const,
+          content: p.settings.codeContent ?? '',
+          language: 'python',
+        };
+      }
+      if (p.type === 'slides') {
+        return {
+          id: p.id,
+          type: 'slides' as const,
+          content: JSON.stringify({
+            pdfUrl: p.settings.pdfUrl ?? '',
+          }),
+        };
+      }
+      if (p.type === 'video') {
+        return {
+          id: p.id,
+          type: 'video' as const,
+          content: p.settings.videoUrl ?? '',
+        };
+      }
+      // fallback
+      return {
+        id: p.id,
+        type: 'text' as const,
+        content: '',
+      };
+    });
+
+  return {
+    id: 'topic-1',             // el backend no usa este id para la BD
+    title: title || 'Tópico sin título',
+    variant: 'basic',          // podrías inferirla según tipos de bloque
+    blocks,
+  };
+}
+
+function buildPanelsFromTopic(topic: Topic): EditorPanel[] {
+  if (!topic.blocks || topic.blocks.length === 0) {
+    return [
+      {
+        id: 'panel-1',
+        title: '',
+        type: null,
+        settings: {},
+      },
+    ];
+  }
+
+  return topic.blocks.map((b, index) => {
+    const base: EditorPanel = {
+      id: b.id ?? `panel-${index + 1}`,
+      title: b.type === 'text'
+        ? `Texto ${index + 1}`
+        : b.type === 'code'
+        ? `Código ${index + 1}`
+        : b.type === 'slides'
+        ? `Diapositivas ${index + 1}`
+        : b.type === 'video'
+        ? `Video ${index + 1}`
+        : `Bloque ${index + 1}`,
+      type: b.type as PanelType,
+      settings: {},
+    };
+
+    if (b.type === 'text') {
+      base.settings.textContent = b.content ?? '';
+    } else if (b.type === 'code') {
+      base.settings.codeContent = b.content ?? '';
+    } else if (b.type === 'slides') {
+      try {
+        const parsed = JSON.parse(b.content ?? '{}');
+        base.settings.pdfUrl = parsed.pdfUrl ?? '';
+      } catch {
+        base.settings.pdfUrl = '';
+      }
+    } else if (b.type === 'video') {
+      base.settings.videoUrl = b.content ?? '';
+    }
+
+    return base;
+  });
+}
+
 // ---------------- Componente principal: modo editor ----------------
 
 export default function TopicoEditorLayout() {
+  const { plantillaId } = useParams<{ plantillaId?: string }>();
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const goldenLayoutRef = useRef<GoldenLayout | null>(null);
 
   // Estado de navegación
   const [currentLesson, setCurrentLesson] = useState(1);
 
-  // Lista dinámica de paneles (iniciamos con uno solo, vacío)
+  // Estado de "metadatos" de la plantilla/tópico
+  const [plantillaName, setPlantillaName] = useState('');
+  const [topicTitle, setTopicTitle] = useState('Tópico sin título');
+
+  // Lista dinámica de paneles
   const [panels, setPanels] = useState<EditorPanel[]>([
     {
       id: 'panel-1',
@@ -279,6 +396,41 @@ export default function TopicoEditorLayout() {
 
     loadPyodideInstance();
   }, [updateOutput]);
+
+  // Si venimos con /topic/editor/:plantillaId, cargamos la plantilla existente
+  useEffect(() => {
+    if (!plantillaId) return;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/plantillas/${plantillaId}`, {
+          credentials: 'include',
+        });
+
+        if (!res.ok) {
+          throw new Error(`Error al cargar plantilla (${res.status})`);
+        }
+
+        const data = await res.json();
+
+        const json = (data.json ?? {}) as any;
+
+        const topic: Topic = {
+          id: String(json.id ?? data.id_plantilla),
+          title: json.title ?? data.nombre ?? 'Tópico sin título',
+          variant: json.variant ?? 'basic',
+          blocks: Array.isArray(json.blocks) ? json.blocks : [],
+        };
+
+        setPlantillaName(data.nombre ?? '');
+        setTopicTitle(topic.title);
+        setPanels(buildPanelsFromTopic(topic));
+      } catch (err: any) {
+        console.error('Error cargando plantilla en editor:', err);
+        toast.error(err?.message || 'No se pudo cargar la plantilla');
+      }
+    })();
+  }, [plantillaId]);
 
   // Navegación de lecciones
   const handlePrevious = () => {
@@ -672,6 +824,46 @@ sys.stdout = StringIO()
     layout.loadLayout(config);
   }, [panels, buildLayoutConfig]);
 
+  // Guardar plantilla (crear o actualizar)
+  const handleSavePlantilla = async () => {
+    const topicJson = buildTopicFromPanels(panelsRef.current, topicTitle);
+
+    const payload = {
+      nombre: plantillaName || topicTitle || 'Plantilla sin nombre',
+      es_borrador: false,
+      json: topicJson,
+    };
+
+    const isEditing = Boolean(plantillaId);
+
+    const url = isEditing
+      ? `${API_BASE}/api/plantillas/${plantillaId}`
+      : `${API_BASE}/api/plantillas`;
+
+    const method = isEditing ? 'PATCH' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || 'Error al guardar plantilla');
+      }
+
+      toast.success(isEditing ? 'Plantilla actualizada' : 'Plantilla creada');
+    } catch (err: any) {
+      console.error('Error guardando plantilla', err);
+      toast.error(err?.message || 'No se pudo guardar la plantilla');
+    }
+  };
+
   return (
     <div className="topic-lesson-container">
       <div className="topic-lesson-wrapper">
@@ -695,12 +887,45 @@ sys.stdout = StringIO()
 
             {/* Panel de edición */}
             <div className="flex w-80 flex-col gap-4">
+              {/* Metadatos de la plantilla */}
+              <div className="flex flex-col gap-2 rounded border bg-white p-2">
+                <label className="text-[11px] font-semibold text-slate-700">
+                  Nombre de la plantilla (para la BD / lista)
+                </label>
+                <input
+                  type="text"
+                  value={plantillaName}
+                  onChange={(e) => setPlantillaName(e.target.value)}
+                  placeholder="Ej: Tema 1 - Lectura introductoria"
+                  className="w-full rounded border px-1 py-[4px] text-[12px]"
+                />
+
+                <label className="mt-2 text-[11px] font-semibold text-slate-700">
+                  Título del tópico (lo que verá el estudiante)
+                </label>
+                <input
+                  type="text"
+                  value={topicTitle}
+                  onChange={(e) => setTopicTitle(e.target.value)}
+                  placeholder="Ej: Introducción a Python"
+                  className="w-full rounded border px-1 py-[4px] text-[12px]"
+                />
+              </div>
+
               <button
                 type="button"
                 onClick={handleAddPanel}
                 className="rounded bg-blue-600 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-700"
               >
                 + Añadir ventana
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSavePlantilla}
+                className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
+              >
+                {plantillaId ? 'Guardar cambios en plantilla' : 'Guardar nueva plantilla'}
               </button>
 
               <EditorResourceList />
