@@ -1,5 +1,6 @@
 // src/components/HeaderHome.tsx
 import React from 'react'
+import toast from 'react-hot-toast'
 import CustomButton from './CustomBotton'
 import "../styles/HeaderHome.css"
 import { Link } from 'react-router-dom'
@@ -69,7 +70,13 @@ const HeaderHome: React.FC<HeaderHomeProps> = ({
             </button>
             {userMenuOpen && (
               <div className="user-menu__dropdown">
-                <button className="user-menu__item" onClick={() => onUserMenuAction('perfil')}>
+                <button
+                  className="user-menu__item"
+                  onClick={() => {
+                    toast('Funcionalidad pendiente');
+                    onCloseUserMenu();
+                  }}
+                >
                   Configurar perfil
                 </button>
                 <button className="user-menu__item" onClick={() => onUserMenuAction('config')}>

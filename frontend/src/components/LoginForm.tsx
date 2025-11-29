@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { getSession, login as loginService, signout, loginWithGoogle } from "../services/authService";
 
@@ -133,7 +134,7 @@ export default function LoginForm() {
         <span>Ingresar con Google</span>
       </button>
 
-      <a href="" onClick={(e) => { e.preventDefault(); navigate('/recover'); }}>
+      <a href="" onClick={(e) => { e.preventDefault(); toast('Funcionalidad pendiente'); }}>
         ¿Olvidaste tu contraseña?
       </a>
       <button type="button" className="link" onClick={() => navigate('/registro')}>
