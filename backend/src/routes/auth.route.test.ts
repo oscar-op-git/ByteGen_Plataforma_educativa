@@ -2,14 +2,14 @@
 import express from 'express';
 import request from 'supertest';
 
-// 🔹 Mock: rate limits (para que no molesten en tests)
+//  Mock: rate limits (para que no molesten en tests)
 jest.mock('../middlewares/rateLimit.js', () => ({
   registerLimiter: (_req: any, _res: any, next: any) => next(),
   resendVerificationLimiter: (_req: any, _res: any, next: any) => next(),
   loginLimiter: (_req: any, _res: any, next: any) => next(),
 }));
 
-// 🔹 Mock: controllers (solo para probar routing)
+//  Mock: controllers (solo para probar routing)
 jest.mock('../controllers/auth.controller.js', () => ({
   registerController: (req: any, res: any) => {
     return res.status(201).json({
@@ -34,7 +34,7 @@ jest.mock('../controllers/auth.controller.js', () => ({
   },
 }));
 
-// 🔹 Mock: Auth.js y sus providers (para evitar cargar ESM real)
+//  Mock: Auth.js y sus providers (para evitar cargar ESM real)
 
 // @auth/express → exporta { ExpressAuth }
 jest.mock('@auth/express', () => ({
@@ -61,7 +61,7 @@ jest.mock('@auth/prisma-adapter', () => ({
   PrismaAdapter: () => ({}),
 }));
 
-// ⚠️ Importamos después de definir los mocks
+//  Importamos después de definir los mocks
 import { authRouter } from './auth.route.js';
 
 describe('authRouter (Express + routing)', () => {

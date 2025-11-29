@@ -13,7 +13,7 @@ import {
 import { prisma } from '../utils/prisma.js';
 import { sendVerificationEmail } from '../utils/sendEmail.js';
 
-// ⚠️ Importante: los paths en jest.mock deben coincidir EXACTO con los de authService.ts
+//  Importante: los paths en jest.mock deben coincidir EXACTO con los de authService.ts
 jest.mock('../utils/prisma.js', () => {
   const user = {
     findUnique: jest.fn(),
