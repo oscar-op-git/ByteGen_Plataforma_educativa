@@ -14,7 +14,7 @@ import userRouter from "./routes/user.route.js";
 import roleRouter from "./routes/role.route.js";
 import groupRouter from './controllers/group.controller.js';
 import plantillaRouter from "./routes/plantilla.route.js";
-
+import commentRouter from "./routes/comment.route.js";
 
 const app = express();
 
@@ -149,6 +149,7 @@ app.use("/api/users", userRouter);
 app.use("/api/roles", roleRouter);
 
 app.use("/api/plantillas", plantillaRouter);
+app.use("/api/comments", commentRouter);
 
 app.get("/", (_req, res) => {
   res.json({ message: "EduMaster API" });
