@@ -11,7 +11,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import type { Topic } from '../types/topic.types';
-import { getSession } from '../services/authService';
 import { getPlantillas } from '../services/plantillaService';
 
 import TextBlock from '../components/BloqueTexto';

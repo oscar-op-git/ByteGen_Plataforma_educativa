@@ -1,4 +1,3 @@
-import React from 'react';
 import '../styles/BloqueVideo.css';
 
 function toYouTubeEmbed(urlOrId: string): string {
