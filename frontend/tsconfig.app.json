@@ -38,6 +38,6 @@
     "allowJs": false
   },
   "include": [
-    "src","src/**/*",
+    "src",
   ]
 }
