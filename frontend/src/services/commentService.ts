@@ -1,5 +1,7 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-
+const API_BASE =
+  (typeof window !== 'undefined' && (window as any).__API_BASE_URL__) ||
+  'http://localhost:3000';
+  
 export interface ReplyDto {
   id: string
 

@@ -1,4 +1,6 @@
-const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+const API =
+  (typeof window !== 'undefined' && (window as any).__API_BASE_URL__) ||
+  'http://localhost:3000';
 
 //Caché de sesión en memoria
 let sessionCache: { user: any; timestamp: number } | null = null;

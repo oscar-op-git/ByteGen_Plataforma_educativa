@@ -10,13 +10,14 @@
     ],
     "module": "ESNext",
     "types": [
+      "vite/client",
       "node",
       "jest", // <-- AÑADIR ESTO
       "@testing-library/jest-dom" // (Si lo usas)
     ],
     "skipLibCheck": true,
     /* Bundler mode */
-    "moduleResolution": "bundler",
+    "moduleResolution": "Node",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
@@ -31,6 +32,7 @@
     "noUncheckedSideEffectImports": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    
   },
   "include": [
     "src","src/**/*",

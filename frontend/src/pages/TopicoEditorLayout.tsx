@@ -40,7 +40,9 @@ import {
 
 // ---------------- Config API ----------------
 const API_BASE =
-  import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  typeof window !== 'undefined'
+    ? window.location.origin
+    : 'http://localhost:3000';
 
 // ---------------- Tipos base ----------------
 
@@ -951,7 +953,7 @@ function CommentSection({ topicId }: { topicId: string }) {
     }
 
     const r = session.roleId ?? undefined;
-    const can = r !== undefined && ALLOWED_ROLES.includes(r);
+    const can = r != null && ALLOWED_ROLES.indexOf(r) !== -1;
 
     console.log("[CommentSection] roleId:", r, "allowed:", can);
 
