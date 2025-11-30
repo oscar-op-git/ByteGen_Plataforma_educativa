@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HomeBox from '../components/HomeBox';
 import CustomButton from '../components/CustomBotton';
-import RoleBadge from '../components/RoleBadge';
 import CoursesGrid from '../components/CoursesGrid';
 import JoinClassModal from '../components/JoinClassModal';
 import HeaderHome from '../components/HeaderHome';
@@ -22,10 +21,10 @@ type User = {
   roleName: string | null;
 };
 
-type Course = { 
-  id: string; 
-  title: string; 
-  teacher: string; 
+type Course = {
+  id: string;
+  title: string;
+  teacher: string;
   hidden?: boolean;
 };
 
@@ -33,7 +32,6 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [roleView, setRoleView] = useState<1 | 2 | 3>(2);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   // Ahora los cursos vienen de la tabla "plantilla"
@@ -54,7 +52,6 @@ const Home: React.FC = () => {
           navigate('/login');
           return;
         }
-
         setUser({
           id: session.user.id,
           name: session.user.name || session.user.email,
@@ -65,7 +62,6 @@ const Home: React.FC = () => {
           roleName: (session.user as any).roleName ?? null,
         });
 
-        setRoleView((session.user as any).isAdmin ? 1 : 2);
 
         // 2) Obtener plantillas del backend y mapearlas a "courses"
         const plantillas = await getPlantillas();
@@ -119,19 +115,39 @@ const Home: React.FC = () => {
     navigate(`/topic/layout/${id}`);
   }, [navigate]);
 
-
   const onToggleHidden = useCallback((id: string) => {
-    setCourses((prev) => 
+    setCourses((prev) =>
       prev.map((c) => (c.id === id ? { ...c, hidden: !c.hidden } : c))
     );
     toast.success('Estado del bloque actualizado');
-    // Si quieres persistir este cambio, aquí iría un PATCH al backend
+    // TODO backend: aquí iría un PATCH para persistir el borrador/publicado
   }, []);
 
   const onJoin = useCallback(async (code: string) => {
     setJoinOpen(false);
     toast.success(`Te uniste con el código: ${code}`);
-    // TODO: Implementar lógica real
+    // TODO backend:
+    //  - Validar el código
+    //  - Asociar al estudiante al curso
+  }, []);
+
+  const onUseTemplate = useCallback(
+    (templateId: string) => {
+      toast.success(`Usando plantilla ${templateId} para crear tu aula (pendiente backend)`);
+
+      // TODO backend:
+      //  - POST /aulas (o similar) con:
+      //      * id_plantilla = templateId
+      //      * id_usuario = user.id (ejecutor actual)
+      //  - El backend crea el curso/aula
+      //  - Opcional: devolver id del curso creado y navegar directamente:
+      //      navigate(`/topic/layout/${nuevoIdCurso}`);
+    },
+    []
+  );
+
+  const onToggleShowHidden = useCallback(() => {
+    setShowHidden((v) => !v);
   }, []);
 
   if (loading) {
@@ -144,9 +160,19 @@ const Home: React.FC = () => {
 
   if (!user) return null;
 
+  const rawRole = (user.roleName || '').toLowerCase();
+
+  const isAdmin = user.isAdmin || rawRole.includes('admin');
+  const isEditor = rawRole.includes('editor');
+  const isExecutor = rawRole.includes('ejecutor');
+  const isStudent = rawRole.includes('estudiante') || (!isAdmin && !isEditor && !isExecutor);
+
+  // Lo que mostramos en pantalla (igual que antes, pero más robusto)
   const roleLabel =
     user.roleName ??
-    (user.isAdmin ? 'Administrador' : 'Sin rol asignado');
+    (isAdmin ? 'Administrador' : isEditor ? 'Docente editor' : isExecutor ? 'Docente ejecutor' : 'Estudiante');
+
+  
 
   return (
     <>
@@ -173,42 +199,62 @@ const Home: React.FC = () => {
             Rol actual:&nbsp;
             <strong>{roleLabel}</strong>
           </p>
-          
-          <div className="home-role-wrap">
-            <RoleBadge
-              role={roleView}
-              onChangeRoleView={setRoleView}
-              allowAdminSwitch={false}
-              isAdminNow={roleView === 1}
-            />
-          </div>
 
-          <div style={{ marginTop: 16 }}>
-            <CustomButton 
-              label="Unirse a clase" 
-              onClick={() => setJoinOpen(true)} 
-              fullWidth={false} 
-            />
-          </div>
+          {/* 🎯 REGLA: SOLO EL ESTUDIANTE PUEDE UNIRSE POR CÓDIGO */}
+          {isStudent && (
+            <div style={{ marginTop: 16 }}>
+              <CustomButton
+                label="Unirse a clase"
+                onClick={() => setJoinOpen(true)}
+                fullWidth={false}
+              />
+            </div>
+          )}
 
-          <div style={{ marginTop: 24 }}>
-            <CoursesGrid
-              courses={courses}
-              showHidden={showHidden}
-              onToggleShowHidden={() => setShowHidden((v) => !v)}
-              onEnter={onEnterCourse}
-              onToggleHidden={onToggleHidden}
-            />
-          </div>
+          {/* 🎯 REGLA:
+              - Admin / Docente editor / Docente ejecutor ven las plantillas (bloques)
+              - El estudiante NO ve estas plantillas, solo se une por código */}
+          {(isAdmin || isEditor || isExecutor) && (
+            <div style={{ marginTop: 24 }}>
+              <h2>Plantillas disponibles</h2>
+              <p style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
+                Estas plantillas provienen de la tabla <code>plantilla</code>.{' '}
+                El administrador y el docente editor pueden gestionar su estado;
+                el docente ejecutor puede usarlas para crear aulas.
+              </p>
+
+              <CoursesGrid
+                courses={courses}
+                // Admin + Editor pueden mostrar/ocultar borradores
+                showHidden={showHidden}
+                onToggleShowHidden={
+                  isAdmin || isEditor ? onToggleShowHidden : undefined
+                }
+                onEnter={onEnterCourse}
+                // Admin + Editor pueden cambiar borrador/publicado
+                onToggleHidden={isAdmin || isEditor ? onToggleHidden : undefined}
+                // Docente ejecutor: solo esta acción extra
+                onUseTemplate={isExecutor ? onUseTemplate : undefined}
+              />
+            </div>
+          )}
+
+          {/* Mensaje para estudiante si no hay más info de cursos todavía */}
+          {isStudent && (
+            <p style={{ marginTop: 24, fontSize: 13, color: '#777' }}>
+              Para ver tus clases, primero debes unirte con un código proporcionado por tu docente.
+              {/* TODO backend: aquí se listarán los cursos del estudiante cuando tengas ese endpoint. */}
+            </p>
+          )}
         </HomeBox>
       </div>
 
-      <JoinClassModal 
-        open={joinOpen} 
-        onClose={() => setJoinOpen(false)} 
-        onJoin={onJoin} 
+      <JoinClassModal
+        open={joinOpen}
+        onClose={() => setJoinOpen(false)}
+        onJoin={onJoin}
       />
-      
+
       <FooterHome />
     </>
   );

@@ -47,8 +47,11 @@
 /* ===== Dos columnas ===== */
 .roles-layout {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 24px;                        /* MÁS ESPACIO ENTRE COLUMNAS */
+  /* Restauración de la configuración previa y aumentar anchura de los paneles
+     para las áreas de "Asignar rol" y "Eliminar roles" */
+  grid-template-columns: 1.3fr 360px; /* derecha más ancha para mayor espacio en paneles */
+  gap: 16px;                        /* espacio moderado entre columnas */
+  align-items: start;
 }
 
 @media (max-width: 1080px) {
@@ -126,17 +129,47 @@
 /* ===== Columna derecha: paneles ===== */
 .roles-right {
   display: grid;
-  gap: 18px;                        /* MÁS ESPACIO ENTRE PANELES */
+  gap: 4px;                        /* reducir espacio vertical entre toolbar y panel */
+  align-items: start;
+}
+
+/* Wrapper para los botones (Asignar / Eliminar).
+   El espaciado vertical entre este bloque y el siguiente panel
+   se controla por la propiedad `gap` de `.roles-right`.
+   Para cambiar sólo el espacio entre el botón y su panel,
+   modifica `margin-bottom` aquí. */
+.roles-card-toolbar {
+  display: block;
+  margin: 0; /* eliminar márgenes externos */
+  padding: 20px 0 20px 0; /* eliminar padding extra */
+  justify-self: start; /* colocar el toolbar al inicio (lado izquierdo) de su celda */
+  width: auto;          /* que se ajuste al contenido */
+  max-width: 280px;    /* ampliar un poco el máximo para botones largos */
 }
 
 .panel {
   background: #f8fafc;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px; /* un poco menos para compactar */
   display: grid;
   gap: 12px;
+
 }
+.roles-card-toolbar .custom-btn {
+  margin: 0;
+  width: auto;
+  display: inline-flex;
+}
+
+/* Aumentar anchura de los contenedores de tabla/panel para asignación y eliminación */
+.roles-right .panel, .roles-right .roles-card-toolbar {
+  width: 100%;
+}
+
+/* Si quieres que las tablas dentro de la izquierda sean más anchas visualmente,
+   puedes reducir el padding del panel y/o aumentar el espacio horizontal entre columnas
+   (ya ajustado arriba con grid-template-columns). */
 .panel__title {
   margin: 0;
   font-size: 16px;
