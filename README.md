@@ -30,3 +30,8 @@ npm run lint //Verificar errores de linting
 npm run lint:fix //Corregir errores automáticamente
 
 npm run format //Formatear código con Prettier
+
+----JEST y formato de ejecucion----
+```bash
+
+npm test //en sus respectivas carpetas

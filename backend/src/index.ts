@@ -12,7 +12,6 @@ import { prisma } from "./utils/prisma.js";
 import { loginLimiter } from "./middlewares/rateLimit.js";
 import userRouter from "./routes/user.route.js";
 import roleRouter from "./routes/role.route.js";
-import groupRouter from './controllers/group.controller.js';
 import plantillaRouter from "./routes/plantilla.route.js";
 import commentRouter from "./routes/comment.route.js";
 
@@ -140,8 +139,7 @@ app.post("/api/login", loginLimiter, async (req, res) => {
     });
   }
 });
-// Para traer el topico por GRUPO
-app.use('/api/groups', groupRouter);
+
 
 
 app.use("/api/auth", authRouter);
