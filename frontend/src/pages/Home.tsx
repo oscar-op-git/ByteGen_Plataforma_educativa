@@ -61,20 +61,26 @@ const Home: React.FC = () => {
           roleId: (session.user as any).roleId ?? null,
           roleName: (session.user as any).roleName ?? null,
         });
-
-
-        // 2) Obtener plantillas del backend y mapearlas a "courses"
-        const plantillas = await getPlantillas();
+        
+        try {
+        const plantillas = await getPlantillas(); // 👈 esto puede lanzar
         if (!mounted) return;
 
         const mapped: Course[] = plantillas.map((p: any) => ({
           id: String(p.id_plantilla),
           title: p.nombre || p.json?.title || `Plantilla #${p.id_plantilla}`,
           teacher: p.userName || 'Docente no asignado',
-          hidden: p.es_borrador, // puedes ajustar esta lógica si quieres
+          hidden: p.es_borrador,
         }));
 
         setCourses(mapped);
+      } catch (err: any) {
+        console.error('Error al obtener plantillas:', err);
+        if (mounted) {
+          // ⚠️ IMPORTANTE: aquí YA NO mandamos a /login
+          toast.error('No se pudieron cargar las plantillas');
+        }
+      }
       } catch (error) {
         console.error('Error inicializando Home:', error);
         if (mounted) {
