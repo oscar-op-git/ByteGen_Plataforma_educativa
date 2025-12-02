@@ -1,5 +1,5 @@
 const API =
-  (typeof window !== 'undefined' && (window as any).__API_BASE_URL__) ||
+  (typeof window !== 'undefined' && import.meta.env.VITE_API_URL) ||
   'http://localhost:3000';
 
 //Caché de sesión en memoria

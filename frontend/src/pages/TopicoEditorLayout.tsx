@@ -39,7 +39,7 @@ import {
 } from "../services/commentService";
 
 // ---------------- Config API ----------------
-const API_BASE =
+const VITE_API_URL =
   typeof window !== 'undefined'
     ? window.location.origin
     : 'http://localhost:3000';
@@ -412,7 +412,7 @@ export default function TopicoEditorLayout() {
 
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/plantillas/${plantillaId}`, {
+        const res = await fetch(`${VITE_API_URL}/api/plantillas/${plantillaId}`, {
           credentials: 'include',
         });
 
@@ -846,8 +846,8 @@ sys.stdout = StringIO()
     const isEditing = Boolean(plantillaId);
 
     const url = isEditing
-      ? `${API_BASE}/api/plantillas/${plantillaId}`
-      : `${API_BASE}/api/plantillas`;
+      ? `${VITE_API_URL}/api/plantillas/${plantillaId}`
+      : `${VITE_API_URL}/api/plantillas`;
 
     const method = isEditing ? 'PATCH' : 'POST';
 
