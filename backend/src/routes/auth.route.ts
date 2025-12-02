@@ -13,10 +13,10 @@ import {
   verifyEmailController,
   resendVerificationController,
 } from "../controllers/auth.controller.js";
-import { 
-  resendVerificationLimiter, 
+import {
+  resendVerificationLimiter,
   registerLimiter,
-  loginLimiter 
+  loginLimiter
 } from "../middlewares/rateLimit.js";
 
 export const authRouter = Router();
@@ -26,13 +26,16 @@ authRouter.post("/register", registerLimiter, registerController);
 authRouter.get("/verify", verifyEmailController);
 authRouter.post("/resend-verification", resendVerificationLimiter, resendVerificationController);
 
+//------agregando cookies de produccion--------.
+const isProd = env.NODE_ENV === "production";
+
 // configuración de Auth.js
 const handler = ExpressAuth({
   secret: env.AUTH_SECRET,
   trustHost: true,
   adapter: PrismaAdapter(prisma),
-  
-  session: { 
+
+  session: {
     strategy: "database",
     maxAge: 30 * 24 * 60 * 60, // 30 días
     updateAge: 24 * 60 * 60, // actualizar cada 24h
@@ -103,7 +106,7 @@ const handler = ExpressAuth({
       if (account?.provider === "google") {
         await prisma.user.update({
           where: { id: user.id },
-          data: { 
+          data: {
             verified: true,
             emailVerified: new Date()
           },
@@ -112,26 +115,26 @@ const handler = ExpressAuth({
       return true;
     },
 
-  async redirect({ url, baseUrl }) {
-    if (url.startsWith("/")) {
-      return `${baseUrl}${url}`;
-    }
-    try {
-      const parsed = new URL(url);
-      const frontendOrigin = env.FRONTEND_ORIGIN;
-
-      if (parsed.origin === baseUrl) {
-        return url;
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
       }
+      try {
+        const parsed = new URL(url);
+        const frontendOrigin = env.FRONTEND_ORIGIN;
 
-      if (parsed.origin === frontendOrigin) {
-        return url;
+        if (parsed.origin === baseUrl) {
+          return url;
+        }
+
+        if (parsed.origin === frontendOrigin) {
+          return url;
+        }
+      } catch (e) {
+        console.error('[auth redirect] URL inválida:', url, e);
       }
-    } catch (e) {
-      console.error('[auth redirect] URL inválida:', url, e);
-    }
-    return `${env.FRONTEND_ORIGIN}/login`;
-  },
+      return `${env.FRONTEND_ORIGIN}/login`;
+    },
 
     async session({ session, user }) {
       // session.user viene de Auth.js, `user` es lo que devuelve el adapter
@@ -183,14 +186,27 @@ const handler = ExpressAuth({
     },
   },
 
+
+
   cookies: {
     sessionToken: {
       name: `authjs.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: isProd ? "none" : "lax",
         path: '/',
-        secure: env.NODE_ENV === 'production',
+        secure: isProd,
+        domain: isProd ? env.COOKIE_DOMAIN : undefined,
+      },
+    },
+    csrfToken: {
+      name: "authjs.csrf-token",
+      options: {
+        httpOnly: true,
+        path: "/",
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        domain: isProd ? env.COOKIE_DOMAIN : undefined,
       },
     },
   },
