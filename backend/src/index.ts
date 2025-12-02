@@ -16,6 +16,8 @@ import plantillaRouter from "./routes/plantilla.route.js";
 import commentRouter from "./routes/comment.route.js";
 
 const app = express();
+//Controlares los tokens:
+const isProd = env.NODE_ENV === "production";
 
 app.set("trust proxy", 1);
 
@@ -114,8 +116,9 @@ app.post("/api/login", loginLimiter, async (req, res) => {
 
     res.cookie("authjs.session-token", sessionToken, {
       httpOnly: true,
-      secure: env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      domain: isProd ? env.COOKIE_DOMAIN : undefined,
       path: "/",
       expires,
     });
