@@ -196,7 +196,6 @@ const handler = ExpressAuth({
         sameSite: isProd ? "none" : "lax",
         path: '/',
         secure: isProd,
-        domain: isProd ? env.COOKIE_DOMAIN : undefined,
       },
     },
     csrfToken: {
@@ -206,7 +205,6 @@ const handler = ExpressAuth({
         path: "/",
         secure: isProd,
         sameSite: isProd ? "none" : "lax",
-        domain: isProd ? env.COOKIE_DOMAIN : undefined,
       },
     },
   },

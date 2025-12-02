@@ -118,7 +118,6 @@ app.post("/api/login", loginLimiter, async (req, res) => {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? "none" : "lax",
-      domain: isProd ? env.COOKIE_DOMAIN : undefined,
       path: "/",
       expires,
     });
